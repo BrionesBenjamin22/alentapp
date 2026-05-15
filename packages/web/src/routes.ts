@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 
 import { MembersView } from "./views/Members";
 import { HomeView } from "./views/Home";
+import { EquipmentLoansView } from "./views/EquipmentLoan";
 import Layout from "./Layout";
 
 export let router = createBrowserRouter([
@@ -16,6 +17,10 @@ export let router = createBrowserRouter([
         path: "/members",
         Component: MembersView,
       },
+      {
+        path: "/equipment-loans",
+        Component: EquipmentLoansView,
+      }
     ],
   },
 ]);
