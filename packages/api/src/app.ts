@@ -12,6 +12,7 @@ import { PaymentValidator } from './domain/services/PaymentValidator.js';
 import { CreatePaymentUseCase } from './application/CreatePaymentUseCase.js';
 import { GetPaymentsUseCase } from './application/GetPaymentsUseCase.js';
 import { UpdatePaymentUseCase } from './application/UpdatePaymentUseCase.js';
+import { CancelPaymentUseCase } from './application/CancelPaymentUseCase.js';
 import { PaymentController } from './delivery/PaymentController.js';
 
 export function buildApp() {
@@ -29,7 +30,7 @@ export function buildApp() {
 
     server.register(cors, {
         origin: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     });
@@ -46,6 +47,7 @@ export function buildApp() {
     const createPaymentUseCase = new CreatePaymentUseCase(paymentRepo, paymentValidator);
     const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
     const updatePaymentUseCase = new UpdatePaymentUseCase(paymentRepo, paymentValidator);
+    const cancelPaymentUseCase = new CancelPaymentUseCase(paymentRepo, paymentValidator);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -56,7 +58,8 @@ export function buildApp() {
     const paymentController = new PaymentController(
         createPaymentUseCase,
         getPaymentsUseCase,
-        updatePaymentUseCase
+        updatePaymentUseCase,
+        cancelPaymentUseCase
     );
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
@@ -66,6 +69,7 @@ export function buildApp() {
     server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
     server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
+    server.patch('/api/v1/payments/:id/cancel', paymentController.cancel.bind(paymentController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })

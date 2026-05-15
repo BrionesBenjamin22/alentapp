@@ -52,6 +52,12 @@ export class PaymentValidator {
         }
     }
 
+    validateCanCancel(payment: PaymentDTO): void {
+        if (payment.status === 'Canceled') {
+            throw new Error('El pago ya se encuentra cancelado');
+        }
+    }
+
     validateMemberId(memberId: string): void {
         if (!memberId || typeof memberId !== 'string') {
             throw new Error('El socio asociado al pago es obligatorio');
