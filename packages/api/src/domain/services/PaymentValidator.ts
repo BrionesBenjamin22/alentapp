@@ -1,4 +1,4 @@
-import type { CreatePaymentRequest, PaymentStatus } from '@alentapp/shared';
+import type { CreatePaymentRequest, PaymentDTO, PaymentStatus, UpdatePaymentRequest } from '@alentapp/shared';
 import type { MemberRepository } from '../MemberRepository.js';
 
 const PAYMENT_STATUSES: PaymentStatus[] = ['Pending', 'Paid', 'Canceled'];
@@ -16,6 +16,40 @@ export class PaymentValidator {
         this.validateDueDate(data.due_date);
         this.validateStatus(data.status);
         this.validatePaymentDate(data.status ?? 'Pending', data.payment_date);
+    }
+
+    validateForUpdate(data: UpdatePaymentRequest, existingPayment: PaymentDTO): void {
+        this.validateMemberIsNotModified(data);
+
+        if (data.amount !== undefined) {
+            this.validateAmount(data.amount);
+        }
+
+        if (data.month !== undefined) {
+            this.validateMonth(data.month);
+        }
+
+        if (data.year !== undefined) {
+            this.validateYear(data.year);
+        }
+
+        if (data.due_date !== undefined) {
+            this.validateDueDate(data.due_date);
+        }
+
+        this.validateStatus(data.status);
+
+        const finalStatus = data.status ?? existingPayment.status;
+        const finalPaymentDate = data.payment_date !== undefined
+            ? data.payment_date
+            : existingPayment.payment_date;
+        this.validatePaymentDate(finalStatus, finalPaymentDate);
+    }
+
+    validateMemberIsNotModified(data: UpdatePaymentRequest): void {
+        if ('member_id' in data || 'id' in data) {
+            throw new Error('No se puede modificar el socio asociado al pago');
+        }
     }
 
     validateMemberId(memberId: string): void {
