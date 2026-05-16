@@ -11,6 +11,7 @@ import { PostgresPaymentRepository } from './infrastructure/PostgresPaymentRepos
 import { PaymentValidator } from './domain/services/PaymentValidator.js';
 import { CreatePaymentUseCase } from './application/CreatePaymentUseCase.js';
 import { GetPaymentsUseCase } from './application/GetPaymentsUseCase.js';
+import { UpdatePaymentUseCase } from './application/UpdatePaymentUseCase.js';
 import { PaymentController } from './delivery/PaymentController.js';
 import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplineRepository.js';
 import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
@@ -51,6 +52,7 @@ export function buildApp() {
     const deleteMemberUseCase = new DeleteMemberUseCase(memberRepo);
     const createPaymentUseCase = new CreatePaymentUseCase(paymentRepo, paymentValidator);
     const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
+    const updatePaymentUseCase = new UpdatePaymentUseCase(paymentRepo, paymentValidator);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -58,7 +60,11 @@ export function buildApp() {
         updateMemberUseCase,
         deleteMemberUseCase
     );
-    const paymentController = new PaymentController(createPaymentUseCase, getPaymentsUseCase);
+    const paymentController = new PaymentController(
+        createPaymentUseCase,
+        getPaymentsUseCase,
+        updatePaymentUseCase
+    );
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
     server.post('/api/v1/socios', memberController.create.bind(memberController));
@@ -66,6 +72,7 @@ export function buildApp() {
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
     server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
+    server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
 
 
     const disciplineRepo = new PostgresDisciplineRepository();
