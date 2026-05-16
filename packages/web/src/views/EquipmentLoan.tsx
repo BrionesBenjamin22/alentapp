@@ -26,19 +26,25 @@ export function EquipmentLoansView() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [loansData, membersData] = await Promise.all([
-        loansService.getAll(),
-        membersService.getAll()
-      ]);
-      setLoans(loansData);
-      setMembers(membersData.filter(m => m.status === 'Activo' && m.category !== 'Cadete')); // Filtramos para la UI
+      // 1. Cargamos los socios (esto sí funciona perfecto)
+      const membersData = await membersService.getAll();
+      setMembers(membersData.filter(m => m.status === 'Activo' && m.category !== 'Cadete'));
+
+      // 2. Intentamos cargar los préstamos (Sabemos que va a fallar hasta la próxima rama)
+      try {
+        const loansData = await loansService.getAll();
+        setLoans(loansData);
+      } catch (loanErr) {
+        console.warn("El GET de préstamos dio error. Es esperado hasta que hagamos el backend del Read.");
+        setLoans([]); // Lo dejamos en 0 por ahora
+      }
+
     } catch (err: any) {
-      console.error(err);
+      console.error("Error al cargar los socios:", err);
     } finally {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -144,9 +150,6 @@ export function EquipmentLoansView() {
           ) : (
             <>
               <Text>Aquí irá la grilla (Implementaremos el Read en la siguiente rama).</Text>
-              <Text mt="2" color="blue.500" fontWeight="bold">
-                Préstamos cargados en memoria por ahora: {loans.length}
-              </Text>
             </>
           )}
         </Box>
