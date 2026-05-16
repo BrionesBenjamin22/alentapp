@@ -38,10 +38,10 @@ export interface UpdateMemberRequest {
 export type PaymentStatus = 'Pending' | 'Paid' | 'Canceled';
 
 export interface PaymentDTO {
-    id: string; // UUID
-    amount: number;
-    month: number;
-    year: number;
+  id: string; // UUID
+  amount: number;
+  month: number;
+  year: number;
   status: PaymentStatus;
   due_date: string; // ISO Date String (YYYY-MM-DD)
   payment_date: string | null; // ISO DateTime String
@@ -51,9 +51,9 @@ export interface PaymentDTO {
 }
 
 export interface CreatePaymentRequest {
-    amount: number;
-    month: number;
-    year: number;
+  amount: number;
+  month: number;
+  year: number;
   due_date: string; // ISO Date String (YYYY-MM-DD)
   member_id: string; // UUID
   status?: PaymentStatus;
@@ -70,3 +70,32 @@ export interface UpdatePaymentRequest {
 }
 
 export type PaymentResponse = PaymentDTO;
+
+// ==========================================
+// Discipline
+// ==========================================
+export interface DisciplineDTO {
+  id: string;
+  memberId: string;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  isTotalSuspension: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDisciplineRequest {
+  memberId: string;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  isTotalSuspension: boolean;
+}
+
+export interface UpdateDisciplineRequest {
+  reason?: string;
+  startDate?: string;
+  endDate?: string;
+  isTotalSuspension?: boolean;
+}

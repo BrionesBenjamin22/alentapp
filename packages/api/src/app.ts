@@ -13,6 +13,13 @@ import { CreatePaymentUseCase } from './application/CreatePaymentUseCase.js';
 import { GetPaymentsUseCase } from './application/GetPaymentsUseCase.js';
 import { UpdatePaymentUseCase } from './application/UpdatePaymentUseCase.js';
 import { PaymentController } from './delivery/PaymentController.js';
+import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplineRepository.js';
+import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
+import { CreateDisciplineUseCase } from './application/CreateDisciplineUseCase.js';
+import { GetDisciplinesUseCase } from './application/GetDisciplinesUseCase.js';
+import { UpdateDisciplineUseCase } from './application/UpdateDisciplineUseCase.js';
+import { DeleteDisciplineUseCase } from './application/DeleteDisciplineUseCase.js';
+import { DisciplineController } from './delivery/DisciplineController.js';
 
 export function buildApp() {
     const server = Fastify({
@@ -66,6 +73,26 @@ export function buildApp() {
     server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
     server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
+
+
+    const disciplineRepo = new PostgresDisciplineRepository();
+    const disciplineValidator = new DisciplineValidator();
+    const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, memberRepo, disciplineValidator);
+    const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
+    const updateDisciplineUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator);
+    const deleteDisciplineUseCase = new DeleteDisciplineUseCase(disciplineRepo);
+
+    const disciplineController = new DisciplineController(
+        createDisciplineUseCase,
+        getDisciplinesUseCase,
+        updateDisciplineUseCase,
+        deleteDisciplineUseCase,
+    );
+
+    server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
+    server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
+    server.put('/api/v1/disciplines/:id', disciplineController.update.bind(disciplineController));
+    server.delete('/api/v1/disciplines/:id', disciplineController.delete.bind(disciplineController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
