@@ -12,6 +12,9 @@ import { PaymentValidator } from './domain/services/PaymentValidator.js';
 import { CreatePaymentUseCase } from './application/CreatePaymentUseCase.js';
 import { GetPaymentsUseCase } from './application/GetPaymentsUseCase.js';
 import { PaymentController } from './delivery/PaymentController.js';
+import { PostgresEquipmentLoanRepository } from './infrastructure/PostgresEquipmentLoanRepository.js';
+import { CreateEquipmentLoanUseCase } from './application/CreateEquipmentLoanUseCase.js';
+import { EquipmentLoanController } from './delivery/EquipmentLoanController.js';
 
 export function buildApp() {
     const server = Fastify({
@@ -37,6 +40,7 @@ export function buildApp() {
     const memberValidator = new MemberValidator(memberRepo);
     const paymentRepo = new PostgresPaymentRepository();
     const paymentValidator = new PaymentValidator(memberRepo);
+    const equipmentLoanRepo = new PostgresEquipmentLoanRepository(); // NUEVO
     
     const createMemberUseCase = new CreateMemberUseCase(memberRepo, memberValidator);
     const getMembersUseCase = new GetMembersUseCase(memberRepo);
@@ -44,6 +48,7 @@ export function buildApp() {
     const deleteMemberUseCase = new DeleteMemberUseCase(memberRepo);
     const createPaymentUseCase = new CreatePaymentUseCase(paymentRepo, paymentValidator);
     const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
+    const createEquipmentLoanUseCase = new CreateEquipmentLoanUseCase(equipmentLoanRepo, memberRepo);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -52,6 +57,7 @@ export function buildApp() {
         deleteMemberUseCase
     );
     const paymentController = new PaymentController(createPaymentUseCase, getPaymentsUseCase);
+    const equipmentLoanController = new EquipmentLoanController(createEquipmentLoanUseCase); // NUEVO
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
     server.post('/api/v1/socios', memberController.create.bind(memberController));
@@ -59,6 +65,7 @@ export function buildApp() {
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
     server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
+    server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
