@@ -31,3 +31,28 @@ export interface UpdateMemberRequest {
   category?: MemberCategory;
   status?: MemberStatus;
 }
+
+// ==========================================
+// Sport
+// ==========================================
+
+export interface SportDTO {
+  id: string;
+  name: string;
+  description: string;
+  maxCapacity: number;
+  additionalPrice: number;
+  isFederated: boolean;
+  enrolledCount: number;
+  availableSlots: number;
+  created_at: string; 
+  updated_at: string; 
+}
+
+export interface CreateSportRequest {
+  name: string;
+  description: string;
+  maxCapacity: number;
+  additionalPrice?: number;
+  isFederated?: boolean;
+}
