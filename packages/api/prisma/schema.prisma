@@ -25,18 +25,25 @@ enum PaymentStatus {
   Canceled
 }
 
-model Member {
-  id          String         @id @default(uuid())
-  dni         String         @unique
-  name        String
-  email       String         @unique
-  category    MemberCategory
-  status      MemberStatus   @default(Activo)
-  created_at  DateTime       @default(now())
-  birthdate   DateTime?      @db.Date
+enum LoanStatus {
+  Loaned
+  Returned
+  Damaged
+}
 
-  payments    Payment[]
-  disciplines Discipline[]
+model Member {
+  id         String         @id @default(uuid())
+  dni        String         @unique
+  name       String
+  email      String         @unique
+  category   MemberCategory
+  status     MemberStatus   @default(Activo)
+  created_at DateTime       @default(now())
+  birthdate  DateTime?      @db.Date
+
+  payments        Payment[]
+  disciplines     Discipline[]
+  equipment_loans EquipmentLoan[]
 
   @@map("members")
 }
@@ -59,17 +66,31 @@ model Payment {
   @@map("payments")
 }
 
-model Discipline {
-  id                  String   @id @default(uuid())
-  reason              String
-  start_date          DateTime
-  end_date            DateTime
-  is_total_suspension Boolean
-  member_id           String
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
+model EquipmentLoan {
+  id         String     @id @default(uuid())
+  item_name  String
+  status     LoanStatus @default(Loaned)
+  loan_date  DateTime   @default(now())
+  due_date   DateTime?
+  member_id  String
+  deleted_at DateTime?
 
-  member              Member   @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [member_id], references: [id])
+
+  @@map("equipment_loans")
+}
+
+model Discipline {
+  id                String   @id @default(uuid())
+  reason            String
+  start_date        DateTime
+  end_date          DateTime
+  is_total_suspension Boolean
+  member_id         String
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  member            Member   @relation(fields: [member_id], references: [id], onDelete: Cascade)
 
   @@index([member_id])
   @@map("disciplines")

@@ -99,3 +99,22 @@ export interface UpdateDisciplineRequest {
   endDate?: string;
   isTotalSuspension?: boolean;
 }
+
+// ==========================================
+// Equipment Loan
+// ==========================================
+export interface EquipmentLoanDTO {
+  id: string;
+  item_name: string;
+  status: 'Loaned' | 'Returned' | 'Damaged';
+  loan_date: string;
+  due_date: string | null;
+  member_id: string;
+  deleted_at: string | null;
+}
+
+export interface CreateEquipmentLoanRequest {
+  member_id: string;
+  item_name: string;
+  due_date?: string;
+}
