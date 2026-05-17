@@ -45,6 +45,7 @@ export function EquipmentLoansView() {
       setIsLoading(false);
     }
   };
+  
   useEffect(() => {
     fetchData();
   }, []);
@@ -101,11 +102,23 @@ export function EquipmentLoansView() {
                     value={formData.member_id}
                     onChange={(e) => setFormData({ ...formData, member_id: e.target.value })}
                     required
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }}
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      borderRadius: '6px', 
+                      border: '1px solid rgba(255, 255, 255, 0.24)', // Borde sutil tipo Chakra
+                      backgroundColor: 'transparent', // Fondo transparente en el input
+                      color: 'white',
+                      outline: 'none'
+                    }}
                   >
-                    <option value="">Seleccione un socio...</option>
+                    <option value="" style={{ background: '#1a202c', color: 'white' }}>
+                      Seleccione un socio...
+                    </option>
                     {members.map(m => (
-                      <option key={m.id} value={m.id}>{m.name} ({m.dni})</option>
+                      <option key={m.id} value={m.id} style={{ background: '#1a202c', color: 'white' }}>
+                        {m.name} ({m.dni})
+                      </option>
                     ))}
                   </select>
                 </Field>
