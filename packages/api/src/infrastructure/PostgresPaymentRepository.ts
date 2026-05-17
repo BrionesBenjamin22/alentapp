@@ -1,6 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/client/client.js';
-import type { CreatePaymentRequest, PaymentDTO, PaymentStatus } from '@alentapp/shared';
+import type { CreatePaymentRequest, PaymentDTO, PaymentStatus, UpdatePaymentRequest } from '@alentapp/shared';
 import type { PaymentRepository } from '../domain/PaymentRepository.js';
 
 if (!process.env.DATABASE_URL) {
@@ -25,6 +25,14 @@ type DBPayment = {
 };
 
 export class PostgresPaymentRepository implements PaymentRepository {
+    async findById(id: string): Promise<PaymentDTO | null> {
+        const payment = await prisma.payment.findUnique({
+            where: { id },
+        });
+
+        return payment ? this.mapToDTO(payment) : null;
+    }
+
     async findAll(): Promise<PaymentDTO[]> {
         const payments = await prisma.payment.findMany({
             orderBy: { created_at: 'desc' },
@@ -43,6 +51,24 @@ export class PostgresPaymentRepository implements PaymentRepository {
                 member_id: data.member_id,
                 status: data.status ?? 'Pending',
                 payment_date: data.payment_date ? new Date(data.payment_date) : null,
+            },
+        });
+
+        return this.mapToDTO(payment);
+    }
+
+    async update(id: string, data: UpdatePaymentRequest): Promise<PaymentDTO> {
+        const payment = await prisma.payment.update({
+            where: { id },
+            data: {
+                ...(data.amount !== undefined && { amount: data.amount }),
+                ...(data.month !== undefined && { month: data.month }),
+                ...(data.year !== undefined && { year: data.year }),
+                ...(data.due_date !== undefined && { due_date: new Date(data.due_date) }),
+                ...(data.status !== undefined && { status: data.status }),
+                ...(data.payment_date !== undefined && {
+                    payment_date: data.payment_date ? new Date(data.payment_date) : null,
+                }),
             },
         });
 
