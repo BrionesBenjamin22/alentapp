@@ -1,4 +1,4 @@
-import type { EquipmentLoanDTO, CreateEquipmentLoanRequest } from '@alentapp/shared';
+import type { EquipmentLoanDTO, CreateEquipmentLoanRequest, UpdateEquipmentLoanRequest } from '@alentapp/shared';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api/v1';
 
@@ -7,7 +7,7 @@ export const loansService = {
     const response = await fetch(`${API_URL}/equipment-loans`);
     if (!response.ok) throw new Error('Error al obtener los préstamos');
     const result = await response.json();
-    return result.data;
+    return result; // Corregido: Fastify devuelve el array directamente
   },
 
   async create(data: CreateEquipmentLoanRequest): Promise<EquipmentLoanDTO> {
@@ -21,6 +21,20 @@ export const loansService = {
       throw new Error(errorData.error || 'Error al crear el préstamo');
     }
     const result = await response.json();
-    return result.data;
+    return result;
+  },
+
+  async update(id: string, data: UpdateEquipmentLoanRequest): Promise<EquipmentLoanDTO> {
+    const response = await fetch(`${API_URL}/equipment-loans/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al actualizar el préstamo');
+    }
+    const result = await response.json();
+    return result;
   }
 };
