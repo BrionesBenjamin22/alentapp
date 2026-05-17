@@ -22,6 +22,8 @@ import { DeleteDisciplineUseCase } from './application/DeleteDisciplineUseCase.j
 import { DisciplineController } from './delivery/DisciplineController.js';
 import { PostgresEquipmentLoanRepository } from './infrastructure/PostgresEquipmentLoanRepository.js';
 import { CreateEquipmentLoanUseCase } from './application/CreateEquipmentLoanUseCase.js';
+import { GetEquipmentLoansUseCase } from './application/GetEquipmentLoansUseCase.js';
+import { UpdateEquipmentLoanUseCase } from './application/UpdateEquipmentLoanUseCase.js';
 import { EquipmentLoanController } from './delivery/EquipmentLoanController.js';
 
 export function buildApp() {
@@ -39,7 +41,8 @@ export function buildApp() {
 
     server.register(cors, {
         origin: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        // Agregamos PATCH a los métodos permitidos
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     });
@@ -66,7 +69,10 @@ export function buildApp() {
     const updateDisciplineUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator);
     const deleteDisciplineUseCase = new DeleteDisciplineUseCase(disciplineRepo);
 
+    // Inyectamos los nuevos casos de uso de Préstamos
     const createEquipmentLoanUseCase = new CreateEquipmentLoanUseCase(equipmentLoanRepo, memberRepo);
+    const getEquipmentLoansUseCase = new GetEquipmentLoansUseCase(equipmentLoanRepo);
+    const updateEquipmentLoanUseCase = new UpdateEquipmentLoanUseCase(equipmentLoanRepo);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -85,7 +91,13 @@ export function buildApp() {
         updateDisciplineUseCase,
         deleteDisciplineUseCase,
     );
-    const equipmentLoanController = new EquipmentLoanController(createEquipmentLoanUseCase);
+    
+    // Actualizamos el controlador con las nuevas dependencias
+    const equipmentLoanController = new EquipmentLoanController(
+        createEquipmentLoanUseCase,
+        getEquipmentLoansUseCase,
+        updateEquipmentLoanUseCase
+    );
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
     server.post('/api/v1/socios', memberController.create.bind(memberController));
@@ -101,7 +113,10 @@ export function buildApp() {
     server.put('/api/v1/disciplines/:id', disciplineController.update.bind(disciplineController));
     server.delete('/api/v1/disciplines/:id', disciplineController.delete.bind(disciplineController));
 
+    // Agregamos las rutas GET y PATCH para los préstamos
+    server.get('/api/v1/equipment-loans', equipmentLoanController.getAll.bind(equipmentLoanController));
     server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
+    server.patch('/api/v1/equipment-loans/:id', equipmentLoanController.update.bind(equipmentLoanController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
@@ -124,4 +139,4 @@ if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
             process.exit(0);
         });
     });
-}
+}4
