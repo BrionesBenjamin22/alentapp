@@ -1,30 +1,49 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { CreateEquipmentLoanUseCase } from '../application/CreateEquipmentLoanUseCase.js';
-import { CreateEquipmentLoanRequest } from '@alentapp/shared';
+import { GetEquipmentLoansUseCase } from '../application/GetEquipmentLoansUseCase.js';
+import { UpdateEquipmentLoanUseCase } from '../application/UpdateEquipmentLoanUseCase.js';
+import { CreateEquipmentLoanRequest, UpdateEquipmentLoanRequest } from '@alentapp/shared';
 
 export class EquipmentLoanController {
-    constructor(private readonly createUseCase: CreateEquipmentLoanUseCase) {}
+    constructor(
+        private createEquipmentLoanUseCase: CreateEquipmentLoanUseCase,
+        private getEquipmentLoansUseCase: GetEquipmentLoansUseCase,
+        private updateEquipmentLoanUseCase: UpdateEquipmentLoanUseCase
+    ) {}
 
-    async create(
-        request: FastifyRequest<{ Body: CreateEquipmentLoanRequest }>,
-        reply: FastifyReply,
-    ) {
+    async create(request: FastifyRequest<{ Body: CreateEquipmentLoanRequest }>, reply: FastifyReply) {
         try {
-            const loan = await this.createUseCase.execute(request.body);
-            return reply.status(201).send({ data: loan });
+            const loan = await this.createEquipmentLoanUseCase.execute(request.body);
+            return reply.status(201).send(loan);
         } catch (error: any) {
-            const message = error.message;
-            
-            // Mapeo de errores según TDD-0010
-            if (message === 'El socio no existe') {
-                return reply.status(404).send({ error: message });
-            } else if (message.includes('Cadet') || message.includes('Cadete')) {
-                return reply.status(403).send({ error: message });
-            } else if (message.includes('Activo') || message.includes('futura')) {
-                return reply.status(422).send({ error: message });
-            } else {
-                return reply.status(400).send({ error: message });
+            return reply.status(400).send({ error: error.message });
+        }
+    }
+
+    async getAll(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const loans = await this.getEquipmentLoansUseCase.execute();
+            return reply.status(200).send(loans);
+        } catch (error: any) {
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    }
+
+    async update(request: FastifyRequest<{ Params: { id: string }, Body: UpdateEquipmentLoanRequest }>, reply: FastifyReply) {
+        try {
+            const loan = await this.updateEquipmentLoanUseCase.execute(request.params.id, request.body);
+            return reply.status(200).send(loan);
+        } catch (error: any) {
+            if (error.message === 'NOT_FOUND') {
+                return reply.status(404).send({ error: 'El préstamo no existe' });
             }
+            if (error.message === 'INVALID_TRANSITION') {
+                return reply.status(422).send({ error: 'Transición de estado inválida. Los estados Returned y Damaged son terminales.' });
+            }
+            if (error.message === 'INVALID_DUE_DATE') {
+                return reply.status(422).send({ error: 'La fecha de devolución debe ser posterior a la fecha de préstamo' });
+            }
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     }
 }
