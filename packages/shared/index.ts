@@ -118,3 +118,8 @@ export interface CreateEquipmentLoanRequest {
   item_name: string;
   due_date?: string;
 }
+
+export interface UpdateEquipmentLoanRequest {
+  status?: 'Loaned' | 'Returned' | 'Damaged';
+  due_date?: string;
+}
