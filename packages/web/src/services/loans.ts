@@ -7,7 +7,7 @@ export const loansService = {
     const response = await fetch(`${API_URL}/equipment-loans`);
     if (!response.ok) throw new Error('Error al obtener los préstamos');
     const result = await response.json();
-    return result; // Corregido: Fastify devuelve el array directamente
+    return result; 
   },
 
   async create(data: CreateEquipmentLoanRequest): Promise<EquipmentLoanDTO> {
@@ -33,6 +33,18 @@ export const loansService = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Error al actualizar el préstamo');
+    }
+    const result = await response.json();
+    return result;
+  },
+
+  async delete(id: string): Promise<EquipmentLoanDTO> {
+    const response = await fetch(`${API_URL}/equipment-loans/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al eliminar el préstamo');
     }
     const result = await response.json();
     return result;
