@@ -29,6 +29,7 @@ import { PostgresEquipmentLoanRepository } from './infrastructure/PostgresEquipm
 import { CreateEquipmentLoanUseCase } from './application/CreateEquipmentLoanUseCase.js';
 import { GetEquipmentLoansUseCase } from './application/GetEquipmentLoansUseCase.js';
 import { UpdateEquipmentLoanUseCase } from './application/UpdateEquipmentLoanUseCase.js';
+import { DeleteEquipmentLoanUseCase } from './application/DeleteEquipmentLoanUseCase.js';
 import { EquipmentLoanController } from './delivery/EquipmentLoanController.js';
 
 export function buildApp() {
@@ -77,10 +78,10 @@ export function buildApp() {
     const updateDisciplineUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator);
     const deleteDisciplineUseCase = new DeleteDisciplineUseCase(disciplineRepo);
 
-    // Inyectamos los nuevos casos de uso de Préstamos
     const createEquipmentLoanUseCase = new CreateEquipmentLoanUseCase(equipmentLoanRepo, memberRepo);
     const getEquipmentLoansUseCase = new GetEquipmentLoansUseCase(equipmentLoanRepo);
     const updateEquipmentLoanUseCase = new UpdateEquipmentLoanUseCase(equipmentLoanRepo);
+    const deleteEquipmentLoanUseCase = new DeleteEquipmentLoanUseCase(equipmentLoanRepo);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -105,7 +106,8 @@ export function buildApp() {
     const equipmentLoanController = new EquipmentLoanController(
         createEquipmentLoanUseCase,
         getEquipmentLoansUseCase,
-        updateEquipmentLoanUseCase
+        updateEquipmentLoanUseCase,
+        deleteEquipmentLoanUseCase
     );
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
@@ -127,7 +129,7 @@ export function buildApp() {
     server.get('/api/v1/equipment-loans', equipmentLoanController.getAll.bind(equipmentLoanController));
     server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
     server.patch('/api/v1/equipment-loans/:id', equipmentLoanController.update.bind(equipmentLoanController));
-
+    server.delete('/api/v1/equipment-loans/:id', equipmentLoanController.delete.bind(equipmentLoanController));
     // Sport routes
     const sportRepo = new PostgresSportRepository();
     const sportValidator = new SportValidator(sportRepo);
