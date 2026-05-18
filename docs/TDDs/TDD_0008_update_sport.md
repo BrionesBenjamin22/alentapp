@@ -56,7 +56,7 @@ Reglas de actualización:
 
 ### Contrato de API (@alentapp/shared)
 
--   Endpoint: `PATCH /api/v1/sports/:id`
+-   Endpoint: `PUT /api/v1/sports/:id`
 -   Request Body: `UpdateSportRequest`
 
 ```ts

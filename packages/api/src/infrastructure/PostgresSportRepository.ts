@@ -1,6 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/client/client.js";
-import { SportDTO, CreateSportRequest } from "../../../shared/index.js";
+import { SportDTO, CreateSportRequest, UpdateSportRequest} from "../../../shared/index.js";
 import { SportRepository } from "../domain/SportRepository.js";
 
 if (!process.env.DATABASE_URL) {
@@ -37,11 +37,39 @@ export class PostgresSportRepository implements SportRepository {
         return this.mapToDTO(newSport);
     }
 
+    async findById(id: string): Promise<SportDTO | null> {
+        const sport = await prisma.sport.findUnique({
+            where: { id },
+        });
+
+        return sport ? this.mapToDTO(sport) : null;
+    }
+
     async findByName(name: string): Promise<SportDTO | null> {
         const sport = await prisma.sport.findUnique({
             where: { name }
         });
         return sport ? this.mapToDTO(sport) : null;
+    }
+
+    async findAll(): Promise<SportDTO[]> {
+        const sports = await prisma.sport.findMany({
+            orderBy: { created_at: 'desc' },
+        });
+
+        return sports.map(sport => this.mapToDTO(sport));
+    }
+
+    async update(id: string, data: UpdateSportRequest): Promise<SportDTO> {
+        const sport = await prisma.sport.update({
+            where: { id },
+            data: {
+                ...(data.description !== undefined && { description: data.description }),
+                ...(data.maxCapacity !== undefined && { max_capacity: data.maxCapacity }),
+            },
+        });
+
+        return this.mapToDTO(sport);
     }
 
     private mapToDTO(sport: DBSport): SportDTO {
@@ -52,8 +80,6 @@ export class PostgresSportRepository implements SportRepository {
             maxCapacity: sport.max_capacity,
             additionalPrice: sport.additional_price,
             isFederated: sport.is_federated,
-            enrolledCount: 0, // Este campo se calcularía en base a las inscripciones reales
-            availableSlots: sport.max_capacity, // Este campo se calcularía en base a las inscripciones reales
             created_at: sport.created_at.toISOString(),
             updated_at: sport.updated_at.toISOString(),
         };

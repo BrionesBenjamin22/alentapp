@@ -1,4 +1,4 @@
-import type { SportDTO, CreateSportRequest } from '@alentapp/shared';
+import type { SportDTO, CreateSportRequest, UpdateSportRequest } from '@alentapp/shared';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api/v1';
 
@@ -37,4 +37,25 @@ export const sportsService = {
       throw error;
     }
   },
+
+  async update(id: string, data: UpdateSportRequest): Promise<SportDTO> {
+    try {
+      const response = await fetch(`${API_URL}/deportes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al actualizar el deporte');
+      }
+      const result = await response.json();
+      return result.data || result;
+    } catch (error: any) {
+      console.error('Error en update:', error);
+      throw error;
+    }
+  }
 };

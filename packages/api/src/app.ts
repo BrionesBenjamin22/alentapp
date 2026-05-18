@@ -10,6 +10,9 @@ import { MemberController } from './delivery/MemberController.js';
 import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
 import { SportValidator } from './domain/services/SportValidator.js';
 import { NewSportUseCase } from './application/NewSportUseCase.js';
+import { GetSportsUseCase } from './application/GetSportsUseCase.js';
+import { GetSportUseCase } from './application/GetSportUseCase.js';
+import { UpdateSportUseCase } from './application/UpdateSportUseCase.js';
 import { SportController } from './delivery/SportController.js';
 import { PostgresPaymentRepository } from './infrastructure/PostgresPaymentRepository.js';
 import { PaymentValidator } from './domain/services/PaymentValidator.js';
@@ -78,6 +81,14 @@ export function buildApp() {
     const updateDisciplineUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator);
     const deleteDisciplineUseCase = new DeleteDisciplineUseCase(disciplineRepo);
 
+    const sportRepo = new PostgresSportRepository();
+    const sportValidator = new SportValidator(sportRepo);
+    const createSportUseCase = new NewSportUseCase(sportRepo, sportValidator);
+    const getSportsUseCase = new GetSportsUseCase(sportRepo);
+    const getSportUseCase = new GetSportUseCase(sportRepo);
+    const updateSportUseCase = new UpdateSportUseCase(sportRepo, sportValidator);
+
+    // Inyectamos los nuevos casos de uso de Préstamos
     const createEquipmentLoanUseCase = new CreateEquipmentLoanUseCase(equipmentLoanRepo, memberRepo);
     const getEquipmentLoansUseCase = new GetEquipmentLoansUseCase(equipmentLoanRepo);
     const updateEquipmentLoanUseCase = new UpdateEquipmentLoanUseCase(equipmentLoanRepo);
@@ -100,6 +111,13 @@ export function buildApp() {
         getDisciplinesUseCase,
         updateDisciplineUseCase,
         deleteDisciplineUseCase,
+    );
+
+    const sportController = new SportController(
+        createSportUseCase,
+        getSportsUseCase,
+        getSportUseCase,
+        updateSportUseCase
     );
     
     // Actualizamos el controlador con las nuevas dependencias
@@ -125,20 +143,16 @@ export function buildApp() {
     server.put('/api/v1/disciplines/:id', disciplineController.update.bind(disciplineController));
     server.delete('/api/v1/disciplines/:id', disciplineController.delete.bind(disciplineController));
 
+    server.post('/api/v1/sports', sportController.create.bind(sportController));
+    server.get('/api/v1/sports', sportController.getAll.bind(sportController));
+    server.get('/api/v1/sports/:id', sportController.getById.bind(sportController));
+    server.put('/api/v1/sports/:id', sportController.update.bind(sportController));
+
     // Agregamos las rutas GET y PATCH para los préstamos
     server.get('/api/v1/equipment-loans', equipmentLoanController.getAll.bind(equipmentLoanController));
     server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
     server.patch('/api/v1/equipment-loans/:id', equipmentLoanController.update.bind(equipmentLoanController));
     server.delete('/api/v1/equipment-loans/:id', equipmentLoanController.delete.bind(equipmentLoanController));
-    // Sport routes
-    const sportRepo = new PostgresSportRepository();
-    const sportValidator = new SportValidator(sportRepo);
-    const createSportUseCase = new NewSportUseCase(sportRepo, sportValidator);
-    const sportController = new SportController(
-        createSportUseCase
-    );
-
-    server.post('/api/v1/deportes', sportController.create.bind(sportController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
