@@ -12,7 +12,7 @@ import {
   Spinner,
   Center
 } from "@chakra-ui/react";
-import { LuPlus, LuRefreshCw, LuPencil } from "react-icons/lu";
+import { LuPlus, LuRefreshCw, LuPencil, LuTrash } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import { sportsService } from "../services/sports";
 import type { SportDTO, CreateSportRequest, UpdateSportRequest } from "@alentapp/shared";
@@ -125,6 +125,21 @@ export function SportsView() {
     }
   };
 
+  const handleDelete = async (sportId: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este deporte?')) {
+      try {
+        await sportsService.deleteSport(sportId);
+        setSuccessMessage("¡Deporte eliminado exitosamente!");
+        fetchSports();
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 2000);
+      } catch (error: any) {
+        setErrorMessage(error.message || "Error al eliminar el deporte");
+      }
+    }
+  };
+  
   useEffect(() => {
     fetchSports();
   }, []);
@@ -301,6 +316,15 @@ export function SportsView() {
                           onClick={() => openEditModal(sport)}
                         >
                           <LuPencil />
+                        </IconButton>
+                        <IconButton 
+                          aria-label="Eliminar deporte"
+                          size="sm" 
+                          variant="ghost"
+                          colorPalette="red"
+                          onClick={() => handleDelete(sport.id)}
+                        >
+                          <LuTrash />
                         </IconButton>
                       </HStack>
                     </Table.Cell>
