@@ -2,6 +2,7 @@ import {
   Button, 
   Heading, 
   HStack, 
+  IconButton,
   Stack, 
   Text, 
   Box,
@@ -11,10 +12,10 @@ import {
   Spinner,
   Center
 } from "@chakra-ui/react";
-import { LuPlus, LuRefreshCw } from "react-icons/lu";
+import { LuPlus, LuRefreshCw, LuPencil } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import { sportsService } from "../services/sports";
-import type { SportDTO, CreateSportRequest } from "@alentapp/shared";
+import type { SportDTO, CreateSportRequest, UpdateSportRequest } from "@alentapp/shared";
 import { 
   DialogRoot, 
   DialogContent, 
@@ -36,6 +37,7 @@ export function SportsView() {
   const [sports, setSports] = useState<SportDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingSportId, setEditingSportId] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<CreateSportRequest>({
@@ -60,6 +62,7 @@ export function SportsView() {
   };
 
   const openCreateModal = () => {
+    setEditingSportId(null);
     setFormData({ 
       name: "", 
       description: "", 
@@ -72,16 +75,38 @@ export function SportsView() {
     setIsDialogOpen(true);
   };
 
+  const openEditModal = (sport: SportDTO) => {
+    setEditingSportId(sport.id);
+    setFormData({
+      name: sport.name,
+      description: sport.description,
+      maxCapacity: sport.maxCapacity,
+      additionalPrice: sport.additionalPrice,
+      isFederated: sport.isFederated,
+    });
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setIsDialogOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      await sportsService.create(formData);
-      setSuccessMessage("¡Deporte creado exitosamente!");
+      if (editingSportId) {
+        const updateData: UpdateSportRequest = {
+          description: formData.description,
+          maxCapacity: formData.maxCapacity,
+        };
+      await sportsService.update(editingSportId, updateData);
+      setSuccessMessage("¡Deporte actualizado exitosamente!");
+      } else {
+        await sportsService.create(formData);
+        setSuccessMessage("¡Deporte creado exitosamente!");
+      }
       setIsDialogOpen(false);
-      fetchSports(); // Refresh the list
-      // Reset form after a short delay to show success message
+      fetchSports();
       setTimeout(() => {
         setSuccessMessage(null);
         setFormData({
@@ -91,6 +116,7 @@ export function SportsView() {
           additionalPrice: 0,
           isFederated: false,
         });
+        setEditingSportId(null);
       }, 2000);
     } catch (err: any) {
       setErrorMessage(err.message || "Error al guardar el deporte");
@@ -137,6 +163,7 @@ export function SportsView() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
+                    disabled={!!editingSportId}
                   />
                 </Field>
                 <Field label="Descripción" required>
@@ -157,23 +184,27 @@ export function SportsView() {
                     min="1"
                   />
                 </Field>
-                <Field label="Precio Adicional (opcional)">
-                  <Input 
-                    type="number" 
-                    placeholder="Ej. 50.00" 
-                    value={formData.additionalPrice === 0 ? '' : formData.additionalPrice}
-                    onChange={(e) => setFormData({ ...formData, additionalPrice: parseFloat(e.target.value) || 0 })}
-                    min="0"
-                    step="0.01"
-                  />
-                </Field>
-                <Field label="¿Es una actividad federada?">
-                  <input 
-                    type="checkbox" 
-                    checked={formData.isFederated}
-                    onChange={(e) => setFormData({ ...formData, isFederated: e.target.checked })}
-                  />
-                </Field>
+                {!editingSportId && (
+                  <>
+                    <Field label="Precio Adicional (opcional)">
+                      <Input 
+                        type="number" 
+                        placeholder="Ej. 50.00" 
+                        value={formData.additionalPrice === 0 ? '' : formData.additionalPrice}
+                        onChange={(e) => setFormData({ ...formData, additionalPrice: parseFloat(e.target.value) || 0 })}
+                        min="0"
+                        step="0.01"
+                      />
+                    </Field>
+                    <Field label="¿Es una actividad federada?">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.isFederated}
+                        onChange={(e) => setFormData({ ...formData, isFederated: e.target.checked })}
+                      />
+                    </Field>
+                  </>
+                )}
               </Stack>
               {errorMessage && (
                 <Box mt="4" p="3" bg="red.50" color="red.700" borderRadius="md" border="1px solid" borderColor="red.200">
@@ -186,7 +217,7 @@ export function SportsView() {
                 <Button variant="outline">Cancelar</Button>
               </DialogActionTrigger>
               <Button type="submit" colorPalette="blue" loading={isSubmitting}>
-                Crear Deporte
+                {editingSportId ? "Guardar Cambios" : "Crear Deporte"}
               </Button>
             </DialogFooter>
             <DialogCloseTrigger />
@@ -240,6 +271,7 @@ export function SportsView() {
                   <Table.ColumnHeader py="4">Cupo Disponible</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Precio Adicional</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Federado</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
@@ -255,13 +287,22 @@ export function SportsView() {
                       {sport.maxCapacity}
                     </Table.Cell>
                     <Table.Cell>
-                      {sport.availableSlots}
-                    </Table.Cell>
-                    <Table.Cell>
                       ${sport.additionalPrice.toFixed(2)}
                     </Table.Cell>
                     <Table.Cell>
                       {sport.isFederated ? "Sí" : "No"}
+                    </Table.Cell>
+                    <Table.Cell textAlign="end">
+                      <HStack gap="2" justify="end">
+                        <IconButton 
+                          aria-label="Editar deporte"
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => openEditModal(sport)}
+                        >
+                          <LuPencil />
+                        </IconButton>
+                      </HStack>
                     </Table.Cell>
                   </Table.Row>
                 ))}
