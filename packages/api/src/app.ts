@@ -19,6 +19,7 @@ import { PaymentValidator } from './domain/services/PaymentValidator.js';
 import { CreatePaymentUseCase } from './application/CreatePaymentUseCase.js';
 import { GetPaymentsUseCase } from './application/GetPaymentsUseCase.js';
 import { UpdatePaymentUseCase } from './application/UpdatePaymentUseCase.js';
+import { CancelPaymentUseCase } from './application/CancelPaymentUseCase.js';
 import { PaymentController } from './delivery/PaymentController.js';
 import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplineRepository.js';
 import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
@@ -31,6 +32,7 @@ import { PostgresEquipmentLoanRepository } from './infrastructure/PostgresEquipm
 import { CreateEquipmentLoanUseCase } from './application/CreateEquipmentLoanUseCase.js';
 import { GetEquipmentLoansUseCase } from './application/GetEquipmentLoansUseCase.js';
 import { UpdateEquipmentLoanUseCase } from './application/UpdateEquipmentLoanUseCase.js';
+import { DeleteEquipmentLoanUseCase } from './application/DeleteEquipmentLoanUseCase.js';
 import { EquipmentLoanController } from './delivery/EquipmentLoanController.js';
 
 export function buildApp() {
@@ -71,6 +73,7 @@ export function buildApp() {
     const createPaymentUseCase = new CreatePaymentUseCase(paymentRepo, paymentValidator);
     const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
     const updatePaymentUseCase = new UpdatePaymentUseCase(paymentRepo, paymentValidator);
+    const cancelPaymentUseCase = new CancelPaymentUseCase(paymentRepo, paymentValidator);
 
     const disciplineValidator = new DisciplineValidator();
     const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, memberRepo, disciplineValidator);
@@ -89,6 +92,7 @@ export function buildApp() {
     const createEquipmentLoanUseCase = new CreateEquipmentLoanUseCase(equipmentLoanRepo, memberRepo);
     const getEquipmentLoansUseCase = new GetEquipmentLoansUseCase(equipmentLoanRepo);
     const updateEquipmentLoanUseCase = new UpdateEquipmentLoanUseCase(equipmentLoanRepo);
+    const deleteEquipmentLoanUseCase = new DeleteEquipmentLoanUseCase(equipmentLoanRepo);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -99,7 +103,8 @@ export function buildApp() {
     const paymentController = new PaymentController(
         createPaymentUseCase, 
         getPaymentsUseCase,
-        updatePaymentUseCase
+        updatePaymentUseCase,
+        cancelPaymentUseCase
     );
     const disciplineController = new DisciplineController(
         createDisciplineUseCase,
@@ -119,7 +124,8 @@ export function buildApp() {
     const equipmentLoanController = new EquipmentLoanController(
         createEquipmentLoanUseCase,
         getEquipmentLoansUseCase,
-        updateEquipmentLoanUseCase
+        updateEquipmentLoanUseCase,
+        deleteEquipmentLoanUseCase
     );
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
@@ -130,6 +136,7 @@ export function buildApp() {
     server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
     server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
+    server.patch('/api/v1/payments/:id/cancel', paymentController.cancel.bind(paymentController));
 
     server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
     server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
@@ -145,6 +152,7 @@ export function buildApp() {
     server.get('/api/v1/equipment-loans', equipmentLoanController.getAll.bind(equipmentLoanController));
     server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
     server.patch('/api/v1/equipment-loans/:id', equipmentLoanController.update.bind(equipmentLoanController));
+    server.delete('/api/v1/equipment-loans/:id', equipmentLoanController.delete.bind(equipmentLoanController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
@@ -167,4 +175,4 @@ if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
             process.exit(0);
         });
     });
-}4
+}

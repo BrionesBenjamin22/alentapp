@@ -56,6 +56,18 @@ export class PostgresEquipmentLoanRepository implements EquipmentLoanRepository 
         return this.mapToDTO(loan);
     }
 
+    async delete(id: string): Promise<EquipmentLoanDTO> {
+        // Hacemos un soft delete actualizando el deleted_at con la fecha actual
+        const loan = await prisma.equipmentLoan.update({
+            where: { id },
+            data: {
+                deleted_at: new Date(),
+            },
+        });
+
+        return this.mapToDTO(loan);
+    }
+
     private mapToDTO(loan: any): EquipmentLoanDTO {
         return {
             id: loan.id,

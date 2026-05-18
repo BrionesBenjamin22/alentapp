@@ -5,4 +5,5 @@ export interface EquipmentLoanRepository {
     getAll(): Promise<EquipmentLoanDTO[]>;
     getById(id: string): Promise<EquipmentLoanDTO | null>;
     update(id: string, data: UpdateEquipmentLoanRequest): Promise<EquipmentLoanDTO>;
+    delete(id: string): Promise<EquipmentLoanDTO>; // <-- NUEVO
 }
