@@ -6,7 +6,7 @@ fecha: 2026-05-02
 titulo: Eliminar Préstamo de Equipamiento (Soft Delete)
 ---
 
-# TDD-0011: Eliminar Préstamo de Equipamiento (Soft Delete)
+# TDD-0012: Eliminar Préstamo de Equipamiento (Soft Delete)
 
 ## Contexto de Negocio (PRD)
 

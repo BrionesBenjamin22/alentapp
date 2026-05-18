@@ -1,12 +1,12 @@
----------------------------
-id:   0006         
+---
+id:   0016         
 estado:  Propuesto 
 autor: German Altamirano    
 fecha:  2026-05-03      
 titulo:  Gestión de Casilleros del Club 
----------------------------
+---
 
-# TDD-0006: Control de Casilleros (Locker)
+# TDD-0016: Control de Casilleros (Locker)
 
 ## Contexto de Negocio (PRD)
 

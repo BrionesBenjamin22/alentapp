@@ -1,181 +1,166 @@
 ---
-id: 0012
+id: 0011
 estado: Aprobado
 autor: Mateo Arturo Geffroy
 fecha: 2026-05-02
-titulo: Eliminar Préstamo de Equipamiento (Soft Delete)
+titulo: Actualizar Préstamo de Equipamiento
 ---
 
-# TDD-0012: Eliminar Préstamo de Equipamiento (Soft Delete)
+# TDD-0011: Actualizar Préstamo de Equipamiento
 
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
 
-Permitir que los administrativos del club marquen un préstamo como eliminado lógicamente cuando fue registrado por error, sin perder la información histórica. Mediante soft delete con el campo `deleted_at`, se preserva la auditoría completa del sistema.
+Permitir que el administrativo actualice el estado de un préstamo existente, principalmente para registrar la devolución (`Loaned → Returned`) o declarar daño (`Loaned → Damaged`). Solo permite cambios en campos específicos, con una máquina de estados que impide transiciones inválidas. La actualización es parcial: solo se modifican campos explícitamente enviados.
 
 ### User Persona
 
-*   **Nombre**: Administrativo del Club / Recepcionista
-*   **Necesidad**: Si comete un error al registrar un préstamo (socio equivocado, ítem equivocado) y el préstamo aún está en estado `Loaned`, necesita poder darlo de baja del sistema sin eliminar físicamente el registro, manteniendo el historial para auditoría.
+*   **Nombre**: Administración del Club / Recepcionista
+*   **Necesidad**: Cuando un socio devuelve un equipo, marcar como "Returned" con un clic. Si llega dañado, registrar como "Damaged". No quiere que un préstamo ya cerrado se reabre.
 
 ### Criterios de Aceptación
 
-*   El sistema debe validar que el préstamo existe y está activo (`deleted_at IS NULL`) antes de intentar eliminarlo.
-*   El sistema solo debe permitir eliminar lógicamente préstamos en estado `Loaned`. Los préstamos en estado `Returned` o `Damaged` no pueden eliminarse.
-*   La eliminación lógica actualiza el campo `deleted_at` con el timestamp del servidor.
-*   El préstamo eliminado lógicamente no aparecerá en listados normales, pero el registro se preserva en la base de datos.
-*   La operación requiere confirmación explícita del usuario en frontend (dialog de confirmación).
-*   La respuesta debe retornar el préstamo con `deleted_at` poblado para confirmar la operación.
+*   El sistema debe validar que el préstamo existe y está activo (`deleted_at IS NULL`).
+*   Solo se permiten transiciones válidas: `Loaned → Returned`, `Loaned → Damaged`.
+*   Estados `Returned` y `Damaged` son **terminales**: no pueden cambiar.
+*   La actualización es **parcial**: campos no enviados no se modifican.
+*   Si solo se envía `due_date` sin `status`, actualiza solo la fecha.
+*   Si la transición es inválida, retorna error 422.
+*   La respuesta incluye el objeto completo actualizado.
 
 ## Contexto Técnico
 
-- **Operación:** DELETE (Baja - Soft Delete)
+- **Operación:** UPDATE (Modificación)
 - **Entidad:** EquipmentLoan
-- **Relacionados:** TDD-0010 (Crear), TDD-0011 (Actualizar)
+- **Relacionados:** TDD-0010 (Crear), TDD-0012 (Eliminar)
 - **Precedencia:** Depende de TDD-0010
 
 ## Diseño Técnico (RFC)
 
 ### Modelo de Datos
 
-La entidad `EquipmentLoan` posee el campo `deleted_at` para soft delete:
+Máquina de estados de `LoanStatus`:
 
-*   `id`: UUID. Identificador único (inmutable).
-*   `item_name`: String. Nombre del equipamiento (preservado tras eliminación).
-*   `status`: String o Enum. Estado del préstamo (preservado tras eliminación).
-*   `loan_date`: DateTime. Fecha de préstamo (preservada tras eliminación).
-*   `due_date`: DateTime nullable. Fecha de devolución (preservada tras eliminación).
-*   `member_id`: UUID. Clave foránea (preservada tras eliminación).
-*   `deleted_at`: DateTime nullable. Marca el préstamo como lógicamente eliminado.
+```
+┌─────────────────────────────────────────────────────┐
+│              MÁQUINA DE ESTADOS                      │
+└─────────────────────────────────────────────────────┘
 
-Reglas de negocio asociadas:
+Estado Actual: LOANED
+├─ ✅ Transición → RETURNED (Terminal)
+└─ ✅ Transición → DAMAGED  (Terminal)
 
-*   Un préstamo solo puede ser eliminado lógicamente si está en estado `Loaned`.
-*   No se realiza `hard delete` bajo ninguna circunstancia.
-*   El campo `deleted_at` se establece con `now()` al eliminar.
-*   Un registro con `deleted_at != null` es invisible en consultas normales (filtro `WHERE deleted_at IS NULL`).
-*   La operación es irreversible desde la lógica de negocio (sin función "Restaurar").
+Estado Actual: RETURNED (Terminal)
+└─ ❌ No permite cambios
 
-Ejemplo conceptual después de eliminación:
+Estado Actual: DAMAGED (Terminal)
+└─ ❌ No permite cambios
+```
+
+| Estado Actual | → Returned | → Damaged | → Loaned |
+| ------------- | ---------- | --------- | -------- |
+| `Loaned`      | ✅         | ✅        | ❌       |
+| `Returned`    | ❌         | ❌        | ❌       |
+| `Damaged`     | ❌         | ❌        | ❌       |
+
+Estados `Returned` y `Damaged` son **terminales** (no se pueden modificar).
+
+Campos actualizables en operación PATCH:
+- `status`: solo transiciones válidas.
+- `due_date`: solo si es válido (posterior a `loan_date`).
+
+Campos inmutables:
+- `id`, `member_id`, `loan_date`, `deleted_at`, `item_name`.
 
 ```ts
-EquipmentLoan {
+UpdateEquipmentLoanRequest {
+    status?: 'Loaned' | 'Returned' | 'Damaged';
+    due_date?: string;   // ISO 8601, opcional
+}
+
+EquipmentLoanResponse {
     id: string;
-    item_name: string;        // Preservado
-    status: 'Loaned';         // Debe ser Loaned para permitir delete
-    loan_date: string;        // Preservado
-    due_date: string | null;  // Preservado
-    member_id: string;        // Preservado
-    deleted_at: string;       // Poblado con timestamp
+    item_name: string;
+    status: 'Loaned' | 'Returned' | 'Damaged';
+    loan_date: string;
+    due_date: string | null;
+    member_id: string;
+    deleted_at: null;
 }
 ```
 
 ### Contrato de API (@alentapp/shared)
 
-Se reutilizan los tipos existentes `EquipmentLoanResponse` que ya incluye el campo `deleted_at`.
+#### Actualizar Préstamo
 
-#### Eliminar Préstamo de Equipamiento (Soft Delete)
-
-*   **Endpoint**: `DELETE /api/v1/equipment-loans/:id`
-*   **Path Parameters**:
+*   **Endpoint**: `PATCH /api/v1/equipment-loans/:id`
+*   **Path Parameters**: `id` (UUID)
+*   **Request Body** (todos opcionales):
 
 ```ts
 {
-    id: string;  // UUID del préstamo a eliminar lógicamente
+    status?: 'Loaned' | 'Returned' | 'Damaged';
+    due_date?: string;   // ISO 8601 datetime
 }
 ```
 
-*   **Request Body**: `None`
-
-*   **Response esperada**: `200 OK`
+*   **Response**: `200 OK`
 
 ```ts
 {
     id: string;
     item_name: string;
-    status: 'Loaned';
+    status: 'Loaned' | 'Returned' | 'Damaged';
     loan_date: string;
     due_date: string | null;
     member_id: string;
-    deleted_at: string;  // Timestamp de eliminación lógica (ISO 8601)
+    deleted_at: null;
 }
 ```
 
 ### Componentes de Arquitectura Hexagonal
 
 *   **Domain**:
-    *   Entidad `EquipmentLoan`.
-    *   Enumeración `EquipmentLoanStatus`.
-    *   Validadores de dominio:
-        *   `validateEquipmentLoanExists(loan)`: Valida que el préstamo no sea `null` y esté activo (`deleted_at IS NULL`).
-        *   `validateEquipmentLoanCanBeDeleted(loan)`: Valida que el estado sea `'Loaned'`.
+    *   Máquina de estados `validateStatusTransition(currentStatus, newStatus)`.
+    *   Validador `validateDueDate(dueDate, loanDate)`.
 
 *   **Application**:
-    *   Puerto `EquipmentLoanRepository`.
-    *   Caso de uso `DeleteEquipmentLoanUseCase`.
-    *   Validación de existencia y estado del préstamo antes de eliminar.
+    *   `UpdateEquipmentLoanUseCase`: busca préstamo, valida existencia, valida transición, ejecuta actualización parcial.
+    *   Puerto `EquipmentLoanRepository`: método `update(id, data)`.
 
 *   **Infrastructure**:
-    *   Adaptador de salida `PostgresEquipmentLoanRepository` (método `softDelete`).
-    *   Implementación con Prisma (operación `update`, no `delete`).
-    *   Controlador HTTP `EquipmentLoanController` (método DELETE).
-    *   Mapeo de errores de dominio a códigos HTTP.
+    *   `PostgresEquipmentLoanRepository.update`: actualización parcial con Prisma.
+    *   `EquipmentLoanController.update`: PATCH handler con mapeo de errores.
 
 ## Casos de Borde y Errores
 
-| Escenario                                        | Resultado Esperado                                                    | Código HTTP       |
-| ------------------------------------------------ | --------------------------------------------------------------------- | ----------------- |
-| Préstamo inexistente                            | Mensaje: "El préstamo no existe"                                     | 404 Not Found     |
-| ID de préstamo inválido (UUID)                  | Mensaje: "El ID del préstamo no es válido"                           | 400 Bad Request   |
-| Préstamo ya eliminado lógicamente               | Mensaje: "El préstamo no existe"                                     | 404 Not Found     |
-| Préstamo en estado `Returned`                   | Mensaje: "No se puede eliminar un préstamo en estado Returned"       | 422 Unprocessable Entity |
-| Préstamo en estado `Damaged`                    | Mensaje: "No se puede eliminar un préstamo en estado Damaged"        | 422 Unprocessable Entity |
-| Eliminación lógica exitosa                      | Retorna el préstamo con `deleted_at` poblado                         | 200 OK            |
-| Error de conexión a DB                          | Mensaje: "Error interno, reintente más tarde"                        | 500 Internal Server Error |
+| Escenario                           | Resultado Esperado                                       | Código HTTP              |
+| ----------------------------------- | -------------------------------------------------------- | ------------------------ |
+| Préstamo inexistente                | "El préstamo no existe"                                  | 404 Not Found            |
+| Préstamo ya eliminado lógicamente   | "El préstamo no existe"                                  | 404 Not Found            |
+| Transición `Returned → Loaned`      | "No se puede cambiar el estado desde Returned"           | 422 Unprocessable Entity |
+| Transición `Damaged → Loaned`       | "No se puede cambiar el estado desde Damaged"            | 422 Unprocessable Entity |
+| Transición `Loaned → Loaned`        | Retorna sin cambios (idempotente)                        | 200 OK                   |
+| Due date formato inválido           | "Formato de fecha de devolución inválido"                | 400 Bad Request          |
+| Due date anterior a loan_date       | "La fecha de devolución debe ser posterior al préstamo"  | 422 Unprocessable Entity |
+| Body vacío `{}`                     | Retorna sin cambios                                      | 200 OK                   |
+| Solo actualiza `due_date`           | Solo cambia `due_date`, mantiene `status`                | 200 OK                   |
+| Actualización exitosa `Loaned → Returned` | Retorna con `status: 'Returned'`             | 200 OK                   |
+| Error en base de datos              | "Error interno, reintente más tarde"                     | 500 Internal Server Error|
 
 ## Plan de Implementación
 
-### Backend
-
-1. Confirmar que el campo `deleted_at` (nullable timestamp) existe en el esquema de Prisma del modelo `EquipmentLoan`.
-2. Confirmar que los métodos `findAll` y `findById` filtran registros activos (`WHERE deleted_at IS NULL`).
-3. Crear validadores de dominio:
-    - `validateEquipmentLoanExists(loan): void`.
-    - `validateEquipmentLoanCanBeDeleted(loan): void` (verifica que status sea 'Loaned').
-4. Crear o actualizar el puerto `EquipmentLoanRepository` con método `softDelete(id): Promise<EquipmentLoan>`.
-5. Implementar el método `softDelete` en el adaptador `PostgresEquipmentLoanRepository`:
-    - Ejecutar operación `UPDATE SET deleted_at = now()` con `WHERE id = :id AND deleted_at IS NULL`.
-    - Retornar el DTO completo con `deleted_at` poblado.
-6. Implementar el caso de uso `DeleteEquipmentLoanUseCase`:
-    - Recibe el ID del préstamo.
-    - Obtiene el préstamo usando `findById` (que ya filtra activos).
-    - Valida que el préstamo existe.
-    - Valida que el estado sea `'Loaned'`.
-    - Invoca el método `softDelete` del repositorio.
-    - Retorna la respuesta mapeada a `EquipmentLoanResponse`.
-7. Crear el método DELETE en el `EquipmentLoanController`.
-8. Registrar la ruta `DELETE /api/v1/equipment-loans/:id` en la configuración principal.
-
-### Frontend
-
-9. Implementar servicio de frontend para consumir el endpoint DELETE.
-10. En la vista de listado, agregar botón de eliminación con confirmación:
-    - Mostrar dialog de confirmación: "¿Estás seguro de que deseas eliminar este préstamo?"
-    - Solo enviar la petición si el usuario confirma.
-11. Deshabilitar botón de eliminación si el préstamo está en estado `Returned` o `Damaged`.
-12. Eliminar el préstamo de la vista local al recibir respuesta exitosa (200 OK).
-13. Mostrar mensaje de confirmación: "Préstamo eliminado correctamente".
-
-### Testing
-
-14. Tests unitarios:
-    - Validar eliminación exitosa en estado `Loaned`.
-    - Validar rechazo en estado `Returned`.
-    - Validar rechazo en estado `Damaged`.
-    - Validar error 404 si préstamo no existe.
-15. Tests de integración:
-    - `DELETE /api/v1/equipment-loans/:id` con préstamo válido.
-    - `DELETE /api/v1/equipment-loans/:id` con préstamo inexistente.
-16. Verificar que los préstamos eliminados no aparezcan en listados posteriores.
-17. Verificar con query directa a BD que el registro persiste con `deleted_at` poblado.
+1. Agregar `UpdateEquipmentLoanRequest` a `@alentapp/shared`.
+2. Crear validador de máquina de estados: `validateStatusTransition(from, to)`.
+3. Implementar `UpdateEquipmentLoanUseCase` con flujo completo.
+4. Implementar `PostgresEquipmentLoanRepository.update` con actualización parcial.
+5. Agregar método PATCH al `EquipmentLoanController`.
+6. Registrar ruta `PATCH /api/v1/equipment-loans/:id` en `app.ts`.
+7. Agregar método `update` al servicio frontend.
+8. Conectar botones de acción ("Marcar devuelto", "Marcar dañado") en vista.
+9. Mostrar validaciones visuales: transiciones permitidas, due_date válida.
+10. Deshabilitar campos no modificables: `item_name`, `loan_date`, `member_id`.
+11. Mostrar visualmente estados terminales (Returned, Damaged) deshabilitados.
+12. Tests unitarios: transiciones válidas, transiciones inválidas, body vacío, due_date inválida.
+13. Tests de integración: `PATCH /api/v1/equipment-loans/:id`.
