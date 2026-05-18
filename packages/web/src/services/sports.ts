@@ -5,7 +5,7 @@ const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/ap
 export const sportsService = {
   async getAll(): Promise<SportDTO[]> {
     try {
-      const response = await fetch(`${API_URL}/deportes`);
+      const response = await fetch(`${API_URL}/sports`);
       if (!response.ok) {
         throw new Error('Error al obtener los deportes');
       }
@@ -19,7 +19,7 @@ export const sportsService = {
 
   async create(data: CreateSportRequest): Promise<SportDTO> {
     try {
-      const response = await fetch(`${API_URL}/deportes`, {
+      const response = await fetch(`${API_URL}/sports`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export const sportsService = {
 
   async update(id: string, data: UpdateSportRequest): Promise<SportDTO> {
     try {
-      const response = await fetch(`${API_URL}/deportes/${id}`, {
+      const response = await fetch(`${API_URL}/sports/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -56,6 +56,16 @@ export const sportsService = {
     } catch (error: any) {
       console.error('Error en update:', error);
       throw error;
+    }
+  },
+  async deleteSport(id: string): Promise<void> {
+    const response = await fetch(`${API_URL}/sports/${id}`, {
+        method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error);
     }
   }
 };
