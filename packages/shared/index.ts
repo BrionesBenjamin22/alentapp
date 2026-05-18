@@ -43,8 +43,6 @@ export interface SportDTO {
   maxCapacity: number;
   additionalPrice: number;
   isFederated: boolean;
-  enrolledCount: number;
-  availableSlots: number;
   created_at: string; 
   updated_at: string; 
 }
@@ -56,6 +54,13 @@ export interface CreateSportRequest {
   additionalPrice?: number;
   isFederated?: boolean;
 }
+
+export interface UpdateSportRequest {
+  description?: string;
+  maxCapacity?: number;
+}
+
+export type SportResponse = SportDTO;
 
 // ==========================================
 // Payment
