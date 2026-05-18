@@ -302,6 +302,9 @@ export function SportsView() {
                       {sport.maxCapacity}
                     </Table.Cell>
                     <Table.Cell>
+                      -
+                    </Table.Cell>
+                    <Table.Cell>
                       ${sport.additionalPrice.toFixed(2)}
                     </Table.Cell>
                     <Table.Cell>
