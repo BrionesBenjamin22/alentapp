@@ -68,7 +68,7 @@ Estados `Returned` y `Damaged` son **terminales** (no se pueden modificar).
 
 Campos actualizables en operación PATCH:
 - `status`: solo transiciones válidas.
-- `due_date`: solo si es válido (posterior a `loan_date`).
+- `due_date`: solo si es válido (no anterior a `loan_date`).
 
 Campos inmutables:
 - `id`, `member_id`, `loan_date`, `deleted_at`, `item_name`.
@@ -139,15 +139,15 @@ EquipmentLoanResponse {
 | ----------------------------------- | -------------------------------------------------------- | ------------------------ |
 | Préstamo inexistente                | "El préstamo no existe"                                  | 404 Not Found            |
 | Préstamo ya eliminado lógicamente   | "El préstamo no existe"                                  | 404 Not Found            |
-| Transición `Returned → Loaned`      | "No se puede cambiar el estado desde Returned"           | 422 Unprocessable Entity |
-| Transición `Damaged → Loaned`       | "No se puede cambiar el estado desde Damaged"            | 422 Unprocessable Entity |
+| Transición `Returned → Loaned`      | "Transición de estado inválida. Los estados Returned y Damaged son terminales." | 422 Unprocessable Entity |
+| Transición `Damaged → Loaned`       | "Transición de estado inválida. Los estados Returned y Damaged son terminales." | 422 Unprocessable Entity |
 | Transición `Loaned → Loaned`        | Retorna sin cambios (idempotente)                        | 200 OK                   |
-| Due date formato inválido           | "Formato de fecha de devolución inválido"                | 400 Bad Request          |
+| Due date formato inválido           | "Internal server error"                                  | 500 Internal Server Error |
 | Due date anterior a loan_date       | "La fecha de devolución debe ser posterior al préstamo"  | 422 Unprocessable Entity |
 | Body vacío `{}`                     | Retorna sin cambios                                      | 200 OK                   |
 | Solo actualiza `due_date`           | Solo cambia `due_date`, mantiene `status`                | 200 OK                   |
 | Actualización exitosa `Loaned → Returned` | Retorna con `status: 'Returned'`             | 200 OK                   |
-| Error en base de datos              | "Error interno, reintente más tarde"                     | 500 Internal Server Error|
+| Error en base de datos              | "Internal server error"                                  | 500 Internal Server Error |
 
 ## Plan de Implementación
 

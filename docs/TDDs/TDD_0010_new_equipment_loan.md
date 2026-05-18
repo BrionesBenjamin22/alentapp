@@ -12,18 +12,18 @@ titulo: Crear Préstamo de Equipamiento
 
 ### Objetivo
 
-Permitir que un administrativo registre digitalmente el préstamo de un ítem de equipamiento a un socio habilitado, dejando un historial trazable y auditable. Solo socios con status `Activo` y categoría `Senior` o `Lifetime` pueden recibir préstamos. Los socios `Cadet` están prohibidos.
+Permitir que un administrativo registre digitalmente el préstamo de un ítem de equipamiento a un socio habilitado, dejando un historial trazable y auditable. Solo socios con status `Activo` y categoría distinta de `Cadete` pueden recibir préstamos.
 
 ### User Persona
 
 *   **Nombre**: Administración del Club / Recepcionista
-*   **Necesidad**: Cuando un socio retira un elemento del club, necesita registrarlo rápidamente con el nombre del equipamiento y la fecha de devolución esperada, evitando préstamos a socios sin autorización (Cadet, Moroso, Suspendido).
+*   **Necesidad**: Cuando un socio retira un elemento del club, necesita registrarlo rápidamente con el nombre del equipamiento y la fecha de devolución esperada, evitando préstamos a socios sin autorización (Cadete, Moroso, Suspendido).
 
 ### Criterios de Aceptación
 
 *   El sistema debe validar que el socio (`member_id`) exista en la base de datos.
 *   El sistema debe validar que el socio tenga status `Activo`; no se puede prestar a socios `Moroso` o `Suspendido`.
-*   El sistema debe validar que el socio tenga categoría `Senior` o `Lifetime`; no se puede prestar a socios `Cadet` (403 Forbidden).
+*   El sistema debe validar que el socio no tenga categoría `Cadete`; los socios `Cadete` no pueden recibir préstamos.
 *   El `loan_date` se autogenera con la fecha/hora del servidor (`now()`); el cliente NO lo envía.
 *   El `status` se inicializa automáticamente como `'Loaned'`; el cliente NO lo envía.
 *   El `item_name` es obligatorio, no puede estar vacío.
@@ -57,7 +57,7 @@ Relación:
 
 Reglas de negocio:
 - El préstamo recién creado siempre tiene status `'Loaned'` y `deleted_at: null`.
-- Solo socios con status `'Activo'` y categoría `'Senior'` o `'Lifetime'` pueden recibir préstamos.
+- Solo socios con status `'Activo'` y categoría distinta de `'Cadete'` pueden recibir préstamos.
 - El `loan_date` es generado automáticamente por el servidor.
 
 ```ts
@@ -81,8 +81,8 @@ EquipmentLoan {
 
 ```ts
 {
-    memberId: string;      // UUID del socio existente
-    itemName: string;      // Nombre del equipamiento (no vacío)
+    member_id: string;      // UUID del socio existente
+    item_name: string;      // Nombre del equipamiento (no vacío)
     due_date?: string;     // ISO 8601 datetime, opcional y futura
 }
 ```
@@ -120,15 +120,15 @@ EquipmentLoan {
 
 | Escenario                           | Resultado Esperado                                          | Código HTTP              |
 | ----------------------------------- | ----------------------------------------------------------- | ------------------------ |
-| Socio inexistente                   | "El socio no existe"                                        | 404 Not Found            |
-| Socio status Moroso o Suspendido    | "El socio no está en estado Activo"                         | 422 Unprocessable Entity |
-| Socio categoría Cadet               | "Los socios Cadet no pueden solicitar préstamos"            | 403 Forbidden            |
+| Socio inexistente                   | "El socio no existe"                                        | 400 Bad Request          |
+| Socio status Moroso o Suspendido    | "El socio no está en estado Activo"                         | 400 Bad Request          |
+| Socio categoría Cadete              | "Los socios Cadet no pueden solicitar préstamos"            | 400 Bad Request          |
 | Item name vacío o faltante          | "El nombre del ítem es requerido"                           | 400 Bad Request          |
 | Due date con formato no ISO 8601    | "Formato de fecha de devolución inválido"                   | 400 Bad Request          |
-| Due date en el pasado               | "La fecha de devolución debe ser futura"                    | 422 Unprocessable Entity |
+| Due date en el pasado               | "La fecha de devolución debe ser futura"                    | 400 Bad Request          |
 | Member ID faltante                  | "El campo member_id es requerido"                           | 400 Bad Request          |
 | Creación exitosa                    | `EquipmentLoanDTO` con `status: 'Loaned'`, `deleted_at: null` | 201 Created              |
-| Error en base de datos              | "Error interno, reintente más tarde"                        | 500 Internal Server Error|
+| Error en base de datos              | Mensaje devuelto por la excepción capturada                 | 400 Bad Request          |
 
 ## Plan de Implementación
 
@@ -144,6 +144,6 @@ EquipmentLoan {
 10. Agregar método `create` al servicio frontend `loans.ts`.
 11. Crear vista `EquipmentLoans.tsx` con formulario de creación.
 12. Agregar validaciones visuales: member status check, member category check, item name no vacío, due_date futura.
-13. Mostrar mensajes de error específicos: Cadet (403), Moroso/Suspendido (422), socio inexistente (404).
+13. Mostrar mensajes de error específicos en frontend según el `error` devuelto por backend (actualmente agrupado en 400 para validaciones de create).
 14. Tests unitarios: creación exitosa, socio Cadet, socio Moroso, due_date pasada, item_name vacío.
 15. Tests de integración: `POST /api/v1/equipment-loans`.

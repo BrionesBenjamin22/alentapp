@@ -66,7 +66,7 @@ EquipmentLoan {
 
 ### Contrato de API (@alentapp/shared)
 
-Se reutilizan los tipos existentes `EquipmentLoanResponse` que ya incluye el campo `deleted_at`.
+Se reutilizan los tipos existentes `EquipmentLoanDTO` que incluye el campo `deleted_at`.
 
 #### Eliminar Préstamo de Equipamiento (Soft Delete)
 
@@ -99,7 +99,7 @@ Se reutilizan los tipos existentes `EquipmentLoanResponse` que ya incluye el cam
 
 *   **Domain**:
     *   Entidad `EquipmentLoan`.
-    *   Enumeración `EquipmentLoanStatus`.
+    *   Enumeración `LoanStatus`.
     *   Validadores de dominio:
         *   `validateEquipmentLoanExists(loan)`: Valida que el préstamo no sea `null` y esté activo (`deleted_at IS NULL`).
         *   `validateEquipmentLoanCanBeDeleted(loan)`: Valida que el estado sea `'Loaned'`.
@@ -110,7 +110,7 @@ Se reutilizan los tipos existentes `EquipmentLoanResponse` que ya incluye el cam
     *   Validación de existencia y estado del préstamo antes de eliminar.
 
 *   **Infrastructure**:
-    *   Adaptador de salida `PostgresEquipmentLoanRepository` (método `softDelete`).
+    *   Adaptador de salida `PostgresEquipmentLoanRepository` (método `delete`, implementado como soft delete).
     *   Implementación con Prisma (operación `update`, no `delete`).
     *   Controlador HTTP `EquipmentLoanController` (método DELETE).
     *   Mapeo de errores de dominio a códigos HTTP.
@@ -120,12 +120,12 @@ Se reutilizan los tipos existentes `EquipmentLoanResponse` que ya incluye el cam
 | Escenario                                        | Resultado Esperado                                                    | Código HTTP       |
 | ------------------------------------------------ | --------------------------------------------------------------------- | ----------------- |
 | Préstamo inexistente                            | Mensaje: "El préstamo no existe"                                     | 404 Not Found     |
-| ID de préstamo inválido (UUID)                  | Mensaje: "El ID del préstamo no es válido"                           | 400 Bad Request   |
+| ID de préstamo inválido (UUID)                  | Mensaje: "El préstamo no existe"                                     | 404 Not Found     |
 | Préstamo ya eliminado lógicamente               | Mensaje: "El préstamo no existe"                                     | 404 Not Found     |
-| Préstamo en estado `Returned`                   | Mensaje: "No se puede eliminar un préstamo en estado Returned"       | 422 Unprocessable Entity |
-| Préstamo en estado `Damaged`                    | Mensaje: "No se puede eliminar un préstamo en estado Damaged"        | 422 Unprocessable Entity |
+| Préstamo en estado `Returned`                   | Mensaje: "No se puede eliminar un préstamo en estado Returned o Damaged" | 422 Unprocessable Entity |
+| Préstamo en estado `Damaged`                    | Mensaje: "No se puede eliminar un préstamo en estado Returned o Damaged" | 422 Unprocessable Entity |
 | Eliminación lógica exitosa                      | Retorna el préstamo con `deleted_at` poblado                         | 200 OK            |
-| Error de conexión a DB                          | Mensaje: "Error interno, reintente más tarde"                        | 500 Internal Server Error |
+| Error de conexión a DB                          | Mensaje: "Internal server error"                                     | 500 Internal Server Error |
 
 ## Plan de Implementación
 
@@ -134,8 +134,8 @@ Se reutilizan los tipos existentes `EquipmentLoanResponse` que ya incluye el cam
 3. Crear validadores de dominio:
     *   `validateEquipmentLoanExists(loan): void`.
     *   `validateEquipmentLoanCanBeDeleted(loan): void` (verifica que status sea 'Loaned').
-4. Crear o actualizar el puerto `EquipmentLoanRepository` con método `softDelete(id): Promise<EquipmentLoan>`.
-5. Implementar el método `softDelete` en el adaptador `PostgresEquipmentLoanRepository`:
+4. Crear o actualizar el puerto `EquipmentLoanRepository` con método `delete(id): Promise<EquipmentLoan>`.
+5. Implementar el método `delete` en el adaptador `PostgresEquipmentLoanRepository` como soft delete:
     *   Ejecutar operación `UPDATE SET deleted_at = now()` con `WHERE id = :id AND deleted_at IS NULL`.
     *   Retornar el DTO completo con `deleted_at` poblado.
 6. Implementar el caso de uso `DeleteEquipmentLoanUseCase`:
@@ -143,8 +143,8 @@ Se reutilizan los tipos existentes `EquipmentLoanResponse` que ya incluye el cam
     *   Obtiene el préstamo usando `findById` (que ya filtra activos).
     *   Valida que el préstamo existe.
     *   Valida que el estado sea `'Loaned'`.
-    *   Invoca el método `softDelete` del repositorio.
-    *   Retorna la respuesta mapeada a `EquipmentLoanResponse`.
+    *   Invoca el método `delete` del repositorio.
+    *   Retorna la respuesta mapeada a `EquipmentLoanDTO`.
 7. Crear el método DELETE en el `EquipmentLoanController`.
 8. Registrar la ruta `DELETE /api/v1/equipment-loans/:id` en la configuración principal.
 9. Implementar servicio de frontend para consumir el endpoint.
