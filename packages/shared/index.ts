@@ -33,15 +33,40 @@ export interface UpdateMemberRequest {
 }
 
 // ==========================================
+// Sport
+// ==========================================
+
+export interface SportDTO {
+  id: string;
+  name: string;
+  description: string;
+  maxCapacity: number;
+  additionalPrice: number;
+  isFederated: boolean;
+  enrolledCount: number;
+  availableSlots: number;
+  created_at: string; 
+  updated_at: string; 
+}
+
+export interface CreateSportRequest {
+  name: string;
+  description: string;
+  maxCapacity: number;
+  additionalPrice?: number;
+  isFederated?: boolean;
+}
+
+// ==========================================
 // Payment
 // ==========================================
 export type PaymentStatus = 'Pending' | 'Paid' | 'Canceled';
 
 export interface PaymentDTO {
-    id: string; // UUID
-    amount: number;
-    month: number;
-    year: number;
+  id: string; // UUID
+  amount: number;
+  month: number;
+  year: number;
   status: PaymentStatus;
   due_date: string; // ISO Date String (YYYY-MM-DD)
   payment_date: string | null; // ISO DateTime String
@@ -51,9 +76,9 @@ export interface PaymentDTO {
 }
 
 export interface CreatePaymentRequest {
-    amount: number;
-    month: number;
-    year: number;
+  amount: number;
+  month: number;
+  year: number;
   due_date: string; // ISO Date String (YYYY-MM-DD)
   member_id: string; // UUID
   status?: PaymentStatus;
@@ -70,3 +95,56 @@ export interface UpdatePaymentRequest {
 }
 
 export type PaymentResponse = PaymentDTO;
+
+// ==========================================
+// Discipline
+// ==========================================
+export interface DisciplineDTO {
+  id: string;
+  memberId: string;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  isTotalSuspension: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDisciplineRequest {
+  memberId: string;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  isTotalSuspension: boolean;
+}
+
+export interface UpdateDisciplineRequest {
+  reason?: string;
+  startDate?: string;
+  endDate?: string;
+  isTotalSuspension?: boolean;
+}
+
+// ==========================================
+// Equipment Loan
+// ==========================================
+export interface EquipmentLoanDTO {
+  id: string;
+  item_name: string;
+  status: 'Loaned' | 'Returned' | 'Damaged';
+  loan_date: string;
+  due_date: string | null;
+  member_id: string;
+  deleted_at: string | null;
+}
+
+export interface CreateEquipmentLoanRequest {
+  member_id: string;
+  item_name: string;
+  due_date?: string;
+}
+
+export interface UpdateEquipmentLoanRequest {
+  status?: 'Loaned' | 'Returned' | 'Damaged';
+  due_date?: string;
+}

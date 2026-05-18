@@ -1,65 +1,109 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-    provider = "prisma-client-js"
-    output   = "../src/generated/client"
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
-    provider = "postgresql"
+  provider = "postgresql"
 }
 
 enum MemberCategory {
-    Pleno
-    Cadete
-    Honorario
+  Pleno
+  Cadete
+  Honorario
+}
+
+enum MemberStatus {
+  Activo
+  Moroso
+  Suspendido
 }
 
 enum PaymentStatus {
-    Pending
-    Paid
-    Canceled
+  Pending
+  Paid
+  Canceled
 }
 
-
-enum MemberStatus {
-    Activo
-    Moroso
-    Suspendido
+enum LoanStatus {
+  Loaned
+  Returned
+  Damaged
 }
 
 model Member {
-    id         String         @id @default(uuid())
-    dni        String         @unique
-    name       String
-    email      String         @unique
-    birthdate  DateTime?      @db.Date
-    category   MemberCategory
-    status     MemberStatus   @default(Activo)
-    created_at DateTime       @default(now())
+  id         String         @id @default(uuid())
+  dni        String         @unique
+  name       String
+  email      String         @unique
+  category   MemberCategory
+  status     MemberStatus   @default(Activo)
+  created_at DateTime       @default(now())
+  birthdate  DateTime?      @db.Date
 
-    payments Payment[]
+  payments        Payment[]
+  disciplines     Discipline[]
+  equipment_loans EquipmentLoan[]
 
-
-    @@map("members") // Para que en la DB la tabla se llame 'members' en minúscula
+  @@map("members")
 }
 
-model Payment {
-    id           String        @id @default(uuid())
-    amount       Float
-    month        Int
-    year         Int
-    status       PaymentStatus @default(Pending)
-    due_date     DateTime      @db.Date
-    payment_date DateTime?
-    member_id    String
-    member       Member        @relation(fields: [member_id], references: [id])
-    created_at   DateTime      @default(now())
-    updated_at   DateTime      @updatedAt
+model Sport {
+    id              String   @id @default(uuid())
+    name            String   @unique
+    description     String
+    max_capacity    Int
+    additional_price Float    @default(0)
+    is_federated    Boolean  @default(false)
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
 
-    @@index([member_id])
-    @@map("payments")
+    @@map("sports")
+}
+model Payment {
+  id           String        @id @default(uuid())
+  amount       Float
+  month        Int
+  year         Int
+  status       PaymentStatus @default(Pending)
+  due_date     DateTime      @db.Date
+  payment_date DateTime?
+  member_id    String
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+
+  member       Member        @relation(fields: [member_id], references: [id])
+
+  @@index([member_id])
+  @@map("payments")
+}
+
+model EquipmentLoan {
+  id         String     @id @default(uuid())
+  item_name  String
+  status     LoanStatus @default(Loaned)
+  loan_date  DateTime   @default(now())
+  due_date   DateTime?
+  member_id  String
+  deleted_at DateTime?
+
+  member Member @relation(fields: [member_id], references: [id])
+
+  @@map("equipment_loans")
+}
+
+model Discipline {
+  id                String   @id @default(uuid())
+  reason            String
+  start_date        DateTime
+  end_date          DateTime
+  is_total_suspension Boolean
+  member_id         String
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  member            Member   @relation(fields: [member_id], references: [id], onDelete: Cascade)
+
+  @@index([member_id])
+  @@map("disciplines")
 }
