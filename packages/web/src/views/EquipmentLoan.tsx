@@ -1,5 +1,5 @@
 import { Button, Heading, HStack, Stack, Text, Flex, Input, Box, Center, Spinner, Badge, IconButton } from "@chakra-ui/react";
-import { LuPlus, LuRefreshCw, LuPencil } from "react-icons/lu";
+import { LuPlus, LuRefreshCw, LuPencil, LuTrash2 } from "react-icons/lu"; // Agregamos LuTrash2
 import { useEffect, useState } from "react";
 import { loansService } from "../services/loans";
 import { membersService } from "../services/members";
@@ -73,7 +73,6 @@ export function EquipmentLoansView() {
   // --- Handlers de Edición ---
   const openEditModal = (loan: EquipmentLoanDTO) => {
     setSelectedLoanId(loan.id);
-    // Para el datetime-local, extraemos los primeros 16 caracteres (YYYY-MM-DDThh:mm)
     const formattedDate = loan.due_date ? new Date(loan.due_date).toISOString().slice(0, 16) : "";
     
     setEditData({
@@ -96,6 +95,20 @@ export function EquipmentLoansView() {
       alert(err.message || "Error al actualizar el préstamo");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  // --- Handler de Eliminación (Soft Delete) ---
+  const handleDelete = async (id: string) => {
+    // Confirmación explícita según TDD
+    const isConfirmed = window.confirm("¿Estás seguro de que deseas eliminar este préstamo?");
+    if (!isConfirmed) return;
+
+    try {
+      await loansService.delete(id);
+      fetchData(); // Refrescamos la grilla (el eliminado ya no debería venir por el filtro del backend)
+    } catch (err: any) {
+      alert(err.message || "Error al eliminar el préstamo");
     }
   };
 
@@ -162,7 +175,6 @@ export function EquipmentLoansView() {
               {loans.map(loan => (
                 <tr key={loan.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '12px' }}>
-                    {/* Buscamos el nombre del socio localmente por si la API no devolvió el include */}
                     {members.find(m => m.id === loan.member_id)?.name || 'Socio Desconocido'}
                   </td>
                   <td style={{ padding: '12px', fontWeight: '500' }}>{loan.item_name}</td>
@@ -170,16 +182,28 @@ export function EquipmentLoansView() {
                   <td style={{ padding: '12px' }}>{formatDate(loan.due_date)}</td>
                   <td style={{ padding: '12px' }}>{getStatusBadge(loan.status)}</td>
                   <td style={{ padding: '12px' }}>
-                    <IconButton 
-                      aria-label="Editar préstamo" 
-                      variant="ghost" 
-                      size="sm"
-                      // Deshabilitamos el lápiz si el estado es terminal
-                      disabled={loan.status === 'Returned' || loan.status === 'Damaged'}
-                      onClick={() => openEditModal(loan)}
-                    >
-                      <LuPencil />
-                    </IconButton>
+                    <HStack gap="2">
+                      <IconButton 
+                        aria-label="Editar préstamo" 
+                        variant="ghost" 
+                        size="sm"
+                        disabled={loan.status === 'Returned' || loan.status === 'Damaged'}
+                        onClick={() => openEditModal(loan)}
+                      >
+                        <LuPencil />
+                      </IconButton>
+                      <IconButton 
+                        aria-label="Eliminar préstamo" 
+                        variant="ghost"
+                        colorPalette="red"
+                        size="sm"
+                        // Deshabilitamos el tachito si el estado es terminal
+                        disabled={loan.status === 'Returned' || loan.status === 'Damaged'}
+                        onClick={() => handleDelete(loan.id)}
+                      >
+                        <LuTrash2 />
+                      </IconButton>
+                    </HStack>
                   </td>
                 </tr>
               ))}
