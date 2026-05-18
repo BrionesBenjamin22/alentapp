@@ -3,6 +3,7 @@ import { NewSportUseCase } from "../application/NewSportUseCase.js";
 import { GetSportsUseCase } from "../application/GetSportsUseCase.js";
 import { GetSportUseCase } from "../application/GetSportUseCase.js";
 import { UpdateSportUseCase } from "../application/UpdateSportUseCase.js";
+import { DeleteSportUseCase } from "../application/DeleteSportUseCase.js";
 import { CreateSportRequest, UpdateSportRequest } from "../../../shared/index.js";
 
 export class SportController {
@@ -10,7 +11,8 @@ export class SportController {
         private newSportUseCase: NewSportUseCase,
         private getSportsUseCase: GetSportsUseCase,
         private getSportUseCase: GetSportUseCase,
-        private updateSportUseCase: UpdateSportUseCase
+        private updateSportUseCase: UpdateSportUseCase,
+        private deleteSportUseCase: DeleteSportUseCase
     ) {}
 
     async getAll(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -76,5 +78,20 @@ export class SportController {
             return reply.status(500).send({ error: "Error interno, reintente más tarde" });
         }
     }
-    
+
+    async delete(request: FastifyRequest<{ Params: { id: string } }>,reply: FastifyReply,): Promise<void> {
+        try {
+            const { id } = request.params;
+            await this.deleteSportUseCase.execute(id);
+            return reply.status(204).send(); // No Content
+        } catch (error: any) {
+            if (error.message.includes('no existe')) {
+                return reply.status(404).send({ error: error.message });
+            }
+            if (error.message.includes('inscriptos')) {
+                return reply.status(409).send({ error: error.message });
+            }
+            return reply.status(500).send({ error: "Error interno, reintente más tarde" });
+        }
+    }
 }
