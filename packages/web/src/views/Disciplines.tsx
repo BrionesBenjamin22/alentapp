@@ -15,8 +15,9 @@ import {
 } from '@chakra-ui/react';
 import { LuPencil, LuPlus, LuRefreshCw, LuShieldAlert, LuTrash2 } from 'react-icons/lu';
 import { useEffect, useState } from 'react';
-import type { CreateDisciplineRequest, DisciplineDTO, UpdateDisciplineRequest } from '@alentapp/shared';
+import type { CreateDisciplineRequest, DisciplineDTO, UpdateDisciplineRequest, MemberDTO } from '@alentapp/shared';
 import { disciplinesService } from '../services/disciplines';
+import { membersService } from '../services/members';
 import { Field } from '../components/ui/field';
 import {
   DialogActionTrigger,
@@ -51,6 +52,7 @@ function formatDate(value: string): string {
 
 export function DisciplinesView() {
   const [disciplines, setDisciplines] = useState<DisciplineDTO[]>([]);
+  const [members, setMembers] = useState<MemberDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -68,6 +70,14 @@ export function DisciplinesView() {
       setError(err.message || 'Error al cargar las disciplinas');
     } finally {
       setIsLoading(false);
+    }
+  };
+  const fetchMembers = async () => {
+    try {
+      const data = await membersService.getAll();
+      setMembers(data);
+    } catch (err: any) {
+      setError(err.message || 'Error al cargar los socios');
     }
   };
 
@@ -126,6 +136,7 @@ export function DisciplinesView() {
 
   useEffect(() => {
     fetchDisciplines();
+    fetchMembers();
   }, []);
 
   return (
@@ -156,14 +167,26 @@ export function DisciplinesView() {
             <DialogBody>
               <Stack gap="4">
                 {!editingDisciplineId && (
-                  <Field label="ID del socio" required>
-                    <Input
-                      placeholder="UUID del socio"
-                      value={formData.memberId}
-                      onChange={(e) => setFormData({ ...formData, memberId: e.target.value })}
-                      required
-                    />
-                  </Field>
+                <Field label="Socio" required>
+                  <select
+                    value={formData.memberId}
+                    onChange={(e) => setFormData({ ...formData, memberId: e.target.value })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      border: '1px solid #ccc',
+                    }}
+                  >
+                    <option value="">Seleccionar socio</option>
+                    {members.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.name} - DNI {member.dni}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
                 )}
                 <Field label="Motivo" required>
                   <Input
