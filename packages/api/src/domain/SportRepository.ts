@@ -6,5 +6,6 @@ export interface SportRepository {
     findByName(name: string): Promise<SportDTO | null>;
     findAll(): Promise<SportDTO[]>;
     update(id: string, data: UpdateSportRequest): Promise<SportDTO>;
+    delete(id: string): Promise<void>;
 
 }
