@@ -16,6 +16,7 @@ import { PaymentValidator } from './domain/services/PaymentValidator.js';
 import { CreatePaymentUseCase } from './application/CreatePaymentUseCase.js';
 import { GetPaymentsUseCase } from './application/GetPaymentsUseCase.js';
 import { UpdatePaymentUseCase } from './application/UpdatePaymentUseCase.js';
+import { CancelPaymentUseCase } from './application/CancelPaymentUseCase.js';
 import { PaymentController } from './delivery/PaymentController.js';
 import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplineRepository.js';
 import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
@@ -68,6 +69,7 @@ export function buildApp() {
     const createPaymentUseCase = new CreatePaymentUseCase(paymentRepo, paymentValidator);
     const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
     const updatePaymentUseCase = new UpdatePaymentUseCase(paymentRepo, paymentValidator);
+    const cancelPaymentUseCase = new CancelPaymentUseCase(paymentRepo, paymentValidator);
 
     const disciplineValidator = new DisciplineValidator();
     const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, memberRepo, disciplineValidator);
@@ -89,7 +91,8 @@ export function buildApp() {
     const paymentController = new PaymentController(
         createPaymentUseCase, 
         getPaymentsUseCase,
-        updatePaymentUseCase
+        updatePaymentUseCase,
+        cancelPaymentUseCase
     );
     const disciplineController = new DisciplineController(
         createDisciplineUseCase,
@@ -113,6 +116,7 @@ export function buildApp() {
     server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
     server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
+    server.patch('/api/v1/payments/:id/cancel', paymentController.cancel.bind(paymentController));
 
     server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
     server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
@@ -155,4 +159,4 @@ if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
             process.exit(0);
         });
     });
-}4
+}

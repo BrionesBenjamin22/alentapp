@@ -3,12 +3,14 @@ import type { CreatePaymentRequest, UpdatePaymentRequest } from '@alentapp/share
 import type { CreatePaymentUseCase } from '../application/CreatePaymentUseCase.js';
 import type { GetPaymentsUseCase } from '../application/GetPaymentsUseCase.js';
 import type { UpdatePaymentUseCase } from '../application/UpdatePaymentUseCase.js';
+import type { CancelPaymentUseCase } from '../application/CancelPaymentUseCase.js';
 
 export class PaymentController {
     constructor(
         private readonly createPaymentUseCase: CreatePaymentUseCase,
         private readonly getPaymentsUseCase: GetPaymentsUseCase,
         private readonly updatePaymentUseCase: UpdatePaymentUseCase,
+        private readonly cancelPaymentUseCase: CancelPaymentUseCase,
     ) {}
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
@@ -63,6 +65,30 @@ export class PaymentController {
             }
 
             request.log.error({ err: error }, 'Error inesperado al actualizar pago');
+            return reply.status(500).send({ error: 'Error interno, reintente mas tarde' });
+        }
+    }
+
+    async cancel(
+        request: FastifyRequest<{ Params: { id: string } }>,
+        reply: FastifyReply,
+    ) {
+        try {
+            const { id } = request.params;
+            const payment = await this.cancelPaymentUseCase.execute(id);
+            return reply.status(200).send({ data: payment });
+        } catch (error: any) {
+            const message = error.message;
+
+            if (message === 'El pago no existe') {
+                return reply.status(404).send({ error: message });
+            }
+
+            if (message === 'El pago ya se encuentra cancelado') {
+                return reply.status(409).send({ error: message });
+            }
+
+            request.log.error({ err: error }, 'Error inesperado al cancelar pago');
             return reply.status(500).send({ error: 'Error interno, reintente mas tarde' });
         }
     }

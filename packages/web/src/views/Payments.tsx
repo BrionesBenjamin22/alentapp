@@ -12,7 +12,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { LuPencil, LuPlus, LuRefreshCw } from "react-icons/lu";
+import { LuBan, LuPencil, LuPlus, LuRefreshCw } from "react-icons/lu";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import type { CreatePaymentRequest, MemberDTO, PaymentDTO, PaymentStatus, UpdatePaymentRequest } from "@alentapp/shared";
@@ -222,6 +222,28 @@ export function PaymentsView() {
       setError(err.message || "Lo sentimos! No pudimos guardar el pago, intente nuevamente");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelPayment = async (payment: PaymentDTO) => {
+    const memberLabel = getMemberLabel(payment.member_id);
+    const confirmed = window.confirm(
+      `Esta accion cancelara el pago de ${memberLabel} correspondiente al periodo ${payment.month}/${payment.year}. El registro permanecera guardado. Desea continuar?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await paymentsService.cancel(payment.id);
+      await fetchPaymentsData();
+      setSuccessMessage("Pago cancelado correctamente.");
+    } catch (err: any) {
+      setError(err.message || "Lo sentimos! No pudimos cancelar el pago, intente nuevamente");
     }
   };
 
@@ -460,14 +482,26 @@ export function PaymentsView() {
                     </Table.Cell>
                     <Table.Cell color="fg.muted">{payment.payment_date || "-"}</Table.Cell>
                     <Table.Cell textAlign="end">
-                      <IconButton
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Editar pago"
-                        onClick={() => openEditModal(payment)}
-                      >
-                        <LuPencil />
-                      </IconButton>
+                      <HStack gap="2" justify="flex-end">
+                        <IconButton
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Editar pago"
+                          onClick={() => openEditModal(payment)}
+                        >
+                          <LuPencil />
+                        </IconButton>
+                        <IconButton
+                          variant="ghost"
+                          size="sm"
+                          colorPalette="red"
+                          aria-label="Cancelar pago"
+                          disabled={payment.status === "Canceled"}
+                          onClick={() => handleCancelPayment(payment)}
+                        >
+                          <LuBan />
+                        </IconButton>
+                      </HStack>
                     </Table.Cell>
                   </Table.Row>
                 ))}
