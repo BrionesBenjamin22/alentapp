@@ -48,6 +48,18 @@ model Member {
   @@map("members")
 }
 
+model Sport {
+    id              String   @id @default(uuid())
+    name            String   @unique
+    description     String
+    max_capacity    Int
+    additional_price Float    @default(0)
+    is_federated    Boolean  @default(false)
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
+
+    @@map("sports")
+}
 model Payment {
   id           String        @id @default(uuid())
   amount       Float

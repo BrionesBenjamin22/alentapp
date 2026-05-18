@@ -33,6 +33,31 @@ export interface UpdateMemberRequest {
 }
 
 // ==========================================
+// Sport
+// ==========================================
+
+export interface SportDTO {
+  id: string;
+  name: string;
+  description: string;
+  maxCapacity: number;
+  additionalPrice: number;
+  isFederated: boolean;
+  enrolledCount: number;
+  availableSlots: number;
+  created_at: string; 
+  updated_at: string; 
+}
+
+export interface CreateSportRequest {
+  name: string;
+  description: string;
+  maxCapacity: number;
+  additionalPrice?: number;
+  isFederated?: boolean;
+}
+
+// ==========================================
 // Payment
 // ==========================================
 export type PaymentStatus = 'Pending' | 'Paid' | 'Canceled';
