@@ -168,7 +168,7 @@ export function SportsView() {
         <DialogContent>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Crear Nuevo Deporte</DialogTitle>
+              <DialogTitle>{editingSportId ? "Editar Deporte" : "Crear Nuevo Deporte"}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <Stack gap="4">
