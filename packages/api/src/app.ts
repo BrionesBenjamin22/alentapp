@@ -30,7 +30,7 @@ import { UpdateDisciplineUseCase } from './application/UpdateDisciplineUseCase.j
 import { DeleteDisciplineUseCase } from './application/DeleteDisciplineUseCase.js';
 import { DisciplineController } from './delivery/DisciplineController.js';
 import { PostgresEquipmentLoanRepository } from './infrastructure/PostgresEquipmentLoanRepository.js';
-import { CreateEquipmentLoanUseCase } from './application/CreateEquipmentLoanUseCase.js';
+import { CreateEquipmentLoanUseCase } from './application/NewEquipmentLoanUseCase.js';
 import { GetEquipmentLoansUseCase } from './application/GetEquipmentLoansUseCase.js';
 import { UpdateEquipmentLoanUseCase } from './application/UpdateEquipmentLoanUseCase.js';
 import { DeleteEquipmentLoanUseCase } from './application/DeleteEquipmentLoanUseCase.js';
