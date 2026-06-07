@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PaymentDTO } from '@alentapp/shared';
-import { CancelPaymentUseCase } from './CancelPaymentUseCase.js';
+import { CancelPaymentUseCase } from './DeletePaymentUseCase.js';
 import type { MemberRepository } from '../domain/MemberRepository.js';
 import type { PaymentRepository } from '../domain/PaymentRepository.js';
 import { PaymentValidator } from '../domain/services/PaymentValidator.js';

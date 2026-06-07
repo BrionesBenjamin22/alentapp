@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CreatePaymentRequest, MemberDTO, PaymentDTO } from '@alentapp/shared';
-import { CreatePaymentUseCase } from './CreatePaymentUseCase.js';
+import { CreatePaymentUseCase } from './NewPaymentUseCase.js';
 import type { MemberRepository } from '../domain/MemberRepository.js';
 import type { PaymentRepository } from '../domain/PaymentRepository.js';
 import { PaymentValidator } from '../domain/services/PaymentValidator.js';

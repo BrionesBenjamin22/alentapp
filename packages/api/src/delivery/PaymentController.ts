@@ -1,9 +1,9 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CreatePaymentRequest, UpdatePaymentRequest } from '@alentapp/shared';
-import type { CreatePaymentUseCase } from '../application/CreatePaymentUseCase.js';
+import type { CreatePaymentUseCase } from '../application/NewPaymentUseCase.js';
 import type { GetPaymentsUseCase } from '../application/GetPaymentsUseCase.js';
 import type { UpdatePaymentUseCase } from '../application/UpdatePaymentUseCase.js';
-import type { CancelPaymentUseCase } from '../application/CancelPaymentUseCase.js';
+import type { CancelPaymentUseCase } from '../application/DeletePaymentUseCase.js';
 
 export class PaymentController {
     constructor(
