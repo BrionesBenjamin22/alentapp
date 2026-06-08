@@ -1,0 +1,68 @@
+{
+  "title": "RED — Alentapp API",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Requests por segundo",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m]))"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Tasa de error",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_errors[1m])) / sum(rate(http_requests_total[1m])) * 100"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latencia p95",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_bucket[5m])) by (le))"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Respuestas por status",
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_requests_total[5m]))"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Memoria del proceso",
+      "targets": [
+        {
+          "expr": "process_memory_usage / 1024 / 1024"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 }
+    },
+    {
+      "type": "barchart",
+      "title": "Endpoints mas lentos",
+      "targets": [
+        {
+          "expr": "topk(5, sum by (route) (rate(http_request_duration_sum[5m])) / sum by (route) (rate(http_request_duration_count[5m])))"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 }
+    }
+  ]
+}
