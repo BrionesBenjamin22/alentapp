@@ -38,11 +38,17 @@ COPY packages/web/nginx.prod.conf /etc/nginx/conf.d/default.conf
 # Copiar archivos compilados de Vite
 COPY --from=build /app/packages/web/dist /usr/share/nginx/html
 
-# Crear directorio temporal para nginx (para read-only filesystem)
-RUN mkdir -p /var/run/nginx /var/cache/nginx && \
-    chmod -R 755 /var/run/nginx /var/cache/nginx && \
-    touch /var/run/nginx.pid && \
-    chmod 644 /var/run/nginx.pid
+# Configuración para entorno sin privilegios (cap_drop: ALL):
+# 1. Eliminar "user nginx;" del nginx.conf para arrancar directamente como no-root
+# 2. Redirigir los temp dirs al tmpfs de /tmp (mode 1777, writable por todos)
+# 3. Ajustar permisos de los archivos estáticos
+RUN sed -i '/^user /d' /etc/nginx/nginx.conf && \
+    sed -i 's|^pid .*;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf && \
+    printf 'client_body_temp_path /tmp/client_temp;\nproxy_temp_path /tmp/proxy_temp;\nfastcgi_temp_path /tmp/fastcgi_temp;\nuwsgi_temp_path /tmp/uwsgi_temp;\nscgi_temp_path /tmp/scgi_temp;\n' \
+        > /etc/nginx/conf.d/temp_paths.conf && \
+    chown -R nginx:nginx /usr/share/nginx/html
+
+USER nginx
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

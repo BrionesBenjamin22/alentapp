@@ -25,6 +25,8 @@ COPY packages/shared ./packages/shared
 COPY tsconfig.json ./
 COPY tsconfig.*.json ./
 
+RUN npx prisma generate --schema=packages/api/prisma/schema.prisma
+
 RUN npm run build -w packages/api
 
 FROM node:22-alpine
@@ -43,6 +45,11 @@ COPY package.json package-lock.json ./
 COPY packages/api/package.json ./packages/api/
 
 COPY --from=build /app/packages/api/dist ./packages/api/dist
+COPY --from=build /app/packages/api/src/generated ./packages/api/dist/packages/api/src/generated
+COPY --from=build /app/node_modules/prisma ./node_modules/prisma
+COPY --from=build /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+COPY packages/api/prisma ./packages/api/prisma
+COPY packages/api/prisma.config.ts ./packages/api/prisma.config.ts
 COPY packages/shared ./packages/shared
 
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/@angular /usr/local/lib/node_modules/typescript && rm -f /usr/local/bin/npm /usr/local/bin/npx
@@ -55,4 +62,4 @@ EXPOSE 9464
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://localhost:3000/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
 
-CMD ["node", "packages/api/dist/packages/api/src/app.js"]
+CMD ["sh", "-c", "cd packages/api && node /app/node_modules/prisma/build/index.js migrate deploy && cd /app && node packages/api/dist/packages/api/src/app.js"]
