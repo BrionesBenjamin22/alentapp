@@ -2,9 +2,11 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'opentelemetry'
+  - job_name: alentapp-api
+    metrics_path: /metrics
     static_configs:
-      - targets: ['api:9464']
+      - targets:
+          - api:9464
         labels:
-          app: 'alentapp'
-          service: 'api-otel'
+          app: alentapp
+          service: api

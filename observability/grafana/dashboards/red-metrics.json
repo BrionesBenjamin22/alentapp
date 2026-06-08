@@ -1,14 +1,24 @@
 {
-  "title": "RED — Alentapp API",
+  "uid": "alentapp-red",
+  "title": "RED - Alentapp API",
   "schemaVersion": 39,
   "version": 1,
   "refresh": "5s",
+  "timezone": "browser",
   "panels": [
     {
       "type": "timeseries",
       "title": "Requests por segundo",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "sum(rate(http_requests_total[1m]))"
         }
       ],
@@ -17,8 +27,16 @@
     {
       "type": "timeseries",
       "title": "Tasa de error",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "sum(rate(http_requests_errors[1m])) / sum(rate(http_requests_total[1m])) * 100"
         }
       ],
@@ -27,8 +45,16 @@
     {
       "type": "timeseries",
       "title": "Latencia p95",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_bucket[5m])) by (le))"
         }
       ],
@@ -37,8 +63,16 @@
     {
       "type": "timeseries",
       "title": "Respuestas por status",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "sum by (status) (rate(http_requests_total[5m]))"
         }
       ],
@@ -47,8 +81,16 @@
     {
       "type": "timeseries",
       "title": "Memoria del proceso",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "process_memory_usage / 1024 / 1024"
         }
       ],
@@ -57,8 +99,16 @@
     {
       "type": "barchart",
       "title": "Endpoints mas lentos",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "topk(5, sum by (route) (rate(http_request_duration_sum[5m])) / sum by (route) (rate(http_request_duration_count[5m])))"
         }
       ],
