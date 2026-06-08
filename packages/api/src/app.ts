@@ -1,3 +1,4 @@
+import './infrastructure/telemetry.js';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { PostgresMemberRepository } from './infrastructure/PostgresMemberRepository.js';
@@ -35,6 +36,7 @@ import { GetEquipmentLoansUseCase } from './application/GetEquipmentLoansUseCase
 import { UpdateEquipmentLoanUseCase } from './application/UpdateEquipmentLoanUseCase.js';
 import { DeleteEquipmentLoanUseCase } from './application/DeleteEquipmentLoanUseCase.js';
 import { EquipmentLoanController } from './delivery/EquipmentLoanController.js';
+import { finishREDMetric, startREDMetric } from './infrastructure/redMetrics.js';
 
 export function buildApp() {
     const server = Fastify({
@@ -47,6 +49,13 @@ export function buildApp() {
                 } 
             : undefined,
         },
+    });
+        server.addHook('onRequest', async (request) => {
+        startREDMetric(request);
+    });
+
+    server.addHook('onResponse', async (request, reply) => {
+        finishREDMetric(request, reply.statusCode);
     });
 
     server.register(cors, {
@@ -160,7 +169,9 @@ export function buildApp() {
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });
-
+    server.get('/health', async (_req, rep) => {
+        rep.status(200).send({ status: 'ok' });
+    });
     return server;
 }
 
