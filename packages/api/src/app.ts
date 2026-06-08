@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { PostgresMemberRepository } from './infrastructure/PostgresMemberRepository.js';
@@ -161,10 +162,14 @@ export function buildApp() {
         rep.status(200).send({ msg: 'asd' })
     });
 
+    server.get('/health', async (_req, rep) => {
+        rep.status(200).send({ status: 'ok' })
+    });
+
     return server;
 }
 
-if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
+if (process.argv[1] && (process.argv[1].endsWith('app.ts') || process.argv[1].endsWith('app.js'))) {
     const server = buildApp();
     const port = parseInt(process.env.PORT || '3000', 10);
 
