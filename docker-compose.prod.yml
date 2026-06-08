@@ -112,7 +112,7 @@ services:
       - alentapp-prod
     read_only: true
     tmpfs:
-      - /prometheus
+      - /prometheus:mode=0777
     cap_drop:
       - ALL
     security_opt:
