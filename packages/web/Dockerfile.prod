@@ -3,13 +3,11 @@ FROM node:22-alpine AS deps
 
 WORKDIR /app
 
-# Copiar manifests del monorepo
 COPY package.json package-lock.json ./
-COPY packages/api/package.json ./packages/api/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/web/package.json ./packages/web/
+COPY packages/api/package.json ./packages/api/package.json
+COPY packages/shared/package.json ./packages/shared/package.json
+COPY packages/web/package.json ./packages/web/package.json
 
-# Instalar todas las dependencias (necesarias para Vite en build)
 RUN npm ci
 
 # Etapa 2: build - Compilar frontend con Vite

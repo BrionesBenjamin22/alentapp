@@ -10,7 +10,7 @@ test-results
 playwright-report-fullstack
 selenium-debug.log
 .env
-
+.env.prod
 
 # test
 test/test-report.json
